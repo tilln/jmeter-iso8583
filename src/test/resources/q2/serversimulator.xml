@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<server class="org.jpos.q2.iso.QServer" logger="Q2" name="simulator_10000">
+    <attr name="port" type="java.lang.Integer">10000</attr>
+    <channel class="org.jpos.iso.channel.ASCIIChannel" logger="Q2" packager="org.jpos.iso.packager.GenericPackager" header="">
+        <property name="packager-config" value="src/test/resources/test-packager.xml" />
+    </channel>
+    <request-listener class="org.jpos.bsh.BSHRequestListener" logger="Q2">
+        <property name="source" value="src/test/resources/serversimulator.bsh" />
+    </request-listener>
+</server>

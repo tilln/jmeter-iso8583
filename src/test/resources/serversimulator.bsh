@@ -1,0 +1,9 @@
+message.setResponseMTI();
+message.set(39, "00");
+
+if (message.hasField(35)) {
+    Thread.sleep(1000);
+}
+
+source.send (message);
+

@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ISO8583Sampler extends AbstractSampler
-        implements ISO8583TestElement, TestStateListener, TestBean, Serializable {
+        implements ISO8583TestElement, TestBean, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -26,10 +26,12 @@ public class ISO8583Sampler extends AbstractSampler
 
     // JMeter Property names (appear in script files, so don't change):
     public static final String
+        TIMEOUT = "timeout",
         FIELDS = "fields",
         MACALGORITHM = "macAlgorithm",
         MACKEY = "macKey",
-        TIMEOUT = "timeout";
+        PINBLOCK = "pinBlock",
+        PINKEY = "pinKey";
 
     protected ISO8583Config config = new ISO8583Config();
     protected transient MessageBuilder builder = new MessageBuilder();
@@ -71,10 +73,11 @@ public class ISO8583Sampler extends AbstractSampler
         try {
             request = builder.withPackager(getPackager())
                 .define(getFields())
+                .withPin(getPinBlock(), getPinKey())
                 .withMac(getMacAlgorithm(), getMacKey())
                 .build();
         } catch (ISOException e) {
-            log.error("Error packing request", e.getNested());
+            log.error("Error packing request", e.getNested()); // TODO unpack nested exception
             result.setResponseMessage(e.toString());
             return result;
         }
@@ -118,16 +121,16 @@ public class ISO8583Sampler extends AbstractSampler
             return null;
         }
         assert mux != null;
-        return mux.request(request, getTimeoutAsInt());
+        return mux.request(request, getTimeout());
     }
 
     // For programmatic access from preprocessors...
     public void addField(String id, String value) {
-        addField(id, "", value);
+        addField(id, value, "");
     }
 
-    public void addField(String id, String tag, String value) {
-        addField(new MessageField(id, tag, value));
+    public void addField(String id, String value, String tag) {
+        addField(new MessageField(id, value, tag));
     }
 
     protected void addField(MessageField field) {
@@ -162,33 +165,14 @@ public class ISO8583Sampler extends AbstractSampler
     public String getMacKey() { return getPropertyAsString(MACKEY); }
     public void setMacKey(String macKey) { setProperty(MACKEY, macKey); }
 
-    public String getTimeout() { return getPropertyAsString(TIMEOUT); }
-    public void setTimeout(String timeout) {
-        setProperty(new StringProperty(TIMEOUT, timeout));
-    }
-    public int getTimeoutAsInt() {
-        String timeout = getTimeout();
-        return timeout.isEmpty() ? 0 : Integer.parseInt(timeout);
-    }
+    public String getPinBlock() { return getPropertyAsString(PINBLOCK); }
+    public void setPinBlock(String pinBlock) { setProperty(PINBLOCK, pinBlock); }
 
-    @Override
-    public void testStarted() {
-        log.debug("testStarted");
-        logProperties();
-    }
+    public String getPinKey() { return getPropertyAsString(PINKEY); }
+    public void setPinKey(String pinKey) { setProperty(PINKEY, pinKey); }
 
-    @Override
-    public void testStarted(String s) {
-        testStarted();
-    }
-
-    @Override
-    public void testEnded() {
-        log.debug("testEnded");
-    }
-
-    @Override
-    public void testEnded(String s) {
-        testEnded();
+    public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
+    public void setTimeout(int timeout) {
+        setProperty(new IntegerProperty(TIMEOUT, timeout));
     }
 }

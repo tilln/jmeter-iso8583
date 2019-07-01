@@ -22,7 +22,8 @@ public class MessageBuilder {
     protected ISOMsg msg = new ISOMsg();
     private byte[] packedMsg; // cache a packed version of the message to avoid repeated packing
     protected String macAlgorithm = "";
-    protected Key macKey;
+    protected byte[] pinBlock;
+    protected Key pinKey, macKey;
     protected ISOBasePackager packager; // ISOPackager has no access to field packagers
     protected JCEHandler jceHandler;
 
@@ -42,6 +43,7 @@ public class MessageBuilder {
     public ISOMsg build() throws ISOException {
         assert packager != null;
         // TODO calculate cryptograms
+        calculatePIN();
         calculateMAC();
         return msg;
     }
@@ -74,6 +76,29 @@ public class MessageBuilder {
             packedMsg = msg.pack();
         }
         return this;
+    }
+
+    public MessageBuilder withPin(String pinBlock, String pinKey) {
+        if (pinBlock != null && !pinBlock.isEmpty()) {
+            this.pinBlock = ISOUtil.hex2byte(pinBlock);
+        }
+        if (pinKey != null && !pinKey.isEmpty()) {
+            checkKeyLength(pinKey);
+            // TODO how to pad keys that are no multiple of 8 bytes? concat with itself?
+            this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), pinKey.length()>16 ? "DESede" : "DES");
+        }
+        return this;
+    }
+
+    private void checkKeyLength(String hexKey) {
+        switch (hexKey.length()) {
+            case 16:
+            case 32:
+            case 48:
+                break;
+            default:
+                log.warn("Unusual key length {}", hexKey);
+        }
     }
 
     public MessageBuilder withMac(String macAlgorithm, String macKey) {
@@ -137,6 +162,24 @@ public class MessageBuilder {
             packedMsg = msg.pack();
         } catch (JCEHandlerException e) {
             log.error("MAC calculation failed", e);
+        }
+    }
+
+    protected void calculatePIN() {
+        if (pinKey == null || pinBlock == null || jceHandler == null) {
+            log.debug("Skipping PIN encryption ({})",
+                pinKey == null ? "no key defined" :
+                pinBlock == null ? "no PIN block defined" :
+                "no JCEHandler defined");
+            return;
+        }
+        int pinField = 52; // TODO configurable
+        int pinLength = packager.getFieldPackager(pinField).getLength();
+        try {
+            byte[] encryptedPINBlock = jceHandler.encryptData(pinBlock, pinKey);
+            msg.set(pinField, encryptedPINBlock); // TODO how long? would it ever need padding?
+        } catch (JCEHandlerException e) {
+            log.error("PIN-block encryption failed", e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
+import org.apache.jmeter.testbeans.gui.IntegerPropertyEditor;
 import org.apache.jmeter.testbeans.gui.TableEditor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Sampler.*;
 import java.beans.PropertyDescriptor;
@@ -17,18 +18,28 @@ public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         p = property(TIMEOUT);
-        p.setValue(DEFAULT, "");
+        p.setPropertyEditorClass(IntegerPropertyEditor.class);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, 60000); // 1 minute
 
         p = property(FIELDS);
         p.setPropertyEditorClass(TableEditor.class);
         p.setValue(TableEditor.CLASSNAME, MessageField.class.getName());
         p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults("fields.tableHeaders",
-            new String[]{"Field", "Tag", "Content"}));
-        p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "tag", "content"});
+            new String[]{"Field", "Content", "Tag"}));
+        p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "content", "tag"});
 
         createPropertyGroup("Cryptograms", new String[]{
-            MACALGORITHM, MACKEY,
+            PINBLOCK, PINKEY, MACALGORITHM, MACKEY,
         });
+
+        p = property(PINBLOCK);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(PINKEY);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
 
         p = property(MACALGORITHM);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);

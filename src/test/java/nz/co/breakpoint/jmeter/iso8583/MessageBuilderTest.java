@@ -93,9 +93,9 @@ public class MessageBuilderTest extends ISO8583TestBase {
     @Test
     public void shouldPopulateTLVSubfields() throws ISOException {
         fields = Arrays.asList(
-            new MessageField("48.1", "9C", "TODO"),
-            new MessageField("48.2", "9f26", "1234"),
-            new MessageField("48.3", "9F36", "abcdef")
+            new MessageField("48.1", "TODO", "9C"),
+            new MessageField("48.2", "1234", "9f26"),
+            new MessageField("48.3", "abcdef", "9F36")
         );
         ISOMsg msg = instance.define(fields).msg;
         assertEquals("303030303030303030303031303030303032309c025f5f9f2604313233349f3606616263646566",
@@ -117,6 +117,16 @@ public class MessageBuilderTest extends ISO8583TestBase {
         instance.define(asMessageFields(getTestMessage()));
         assertTrue(instance.getMessageBytes().matches("[0-9A-F]{16,}"));
         assertTrue(instance.getMessageSize() >= 16);
+    }
+
+    @Test
+    public void shouldPackBinaryFields() throws ISOException {
+        fields = Arrays.asList(
+            new MessageField("52", "11223344AABBCCDD")
+        );
+        ISOMsg msg = instance.define(fields).msg;
+        assertTrue(msg.hasField(52));
+        assertEquals("11223344AABBCCDD", msg.getString(52));
     }
 
     @Test

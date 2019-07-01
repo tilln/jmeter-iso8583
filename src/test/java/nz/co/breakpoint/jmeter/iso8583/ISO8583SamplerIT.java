@@ -30,7 +30,7 @@ public class ISO8583SamplerIT extends ISO8583TestBase {
         ISOMsg msg = getTestMessage();
         instance.setFields(asMessageFields(msg));
         instance.setMacAlgorithm("");
-        instance.setTimeout("2000");
+        instance.setTimeout(2000);
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);
         assertFalse(res.getResponseDataAsString().isEmpty());

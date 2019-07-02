@@ -3,6 +3,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 import org.jpos.iso.channel.XMLChannel;
 import org.jpos.q2.iso.ChannelAdaptor;
 import org.jpos.q2.iso.QMUX;
+import org.jpos.q2.iso.QServer;
 import org.jpos.util.NameRegistrar;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -10,14 +11,15 @@ import static org.junit.Assert.*;
 public class ISO8583ConfigTest extends ISO8583TestBase {
     static ISO8583Config instance;
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         instance = getDefaultTestConfig();
-        instance.testStarted(); // make sure Q2 is running
+        instance.startQ2();
+        assert instance.q2.ready(2000);
     }
 
-    @AfterClass
-    public static void teardown() {
+    @After
+    public void teardown() {
         instance.testEnded();
     }
 
@@ -32,11 +34,22 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
     public void shouldCreateChannel() {
         ChannelAdaptor channelAdaptor = instance.configureChannel("jmeter");
         assertNotNull(channelAdaptor);
-        assertEquals("jmeter", channelAdaptor.getName());
+        assertEquals("jmeter-channel", channelAdaptor.getName());
         assertEquals(getDefaultTestConfig().getHost(), channelAdaptor.getHost());
         assertEquals(getDefaultTestConfig().getPortAsInt(), channelAdaptor.getPort());
-        assertNotNull(NameRegistrar.getIfExists("jmeter"));
+        assertNotNull(NameRegistrar.getIfExists("jmeter-channel"));
+        assertNotNull(NameRegistrar.getIfExists("channel.jmeter-channel"));
         assertTrue(channelAdaptor.running());
+    }
+
+    @Test
+    public void shouldCreateServer() {
+        QServer qserver = instance.configureServer("jmeter");
+        assertNotNull(qserver);
+        assertEquals("jmeter-server", qserver.getName());
+        assertNotNull(NameRegistrar.getIfExists("jmeter-server"));
+        assertNotNull(NameRegistrar.getIfExists("server.jmeter-server"));
+        assertTrue(qserver.running());
     }
 
     @Test

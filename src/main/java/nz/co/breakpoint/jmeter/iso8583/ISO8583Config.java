@@ -15,12 +15,14 @@ import org.jpos.core.ConfigurationException;
 import org.jpos.iso.BaseChannel;
 import org.jpos.iso.ISOBasePackager;
 import org.jpos.iso.ISOException;
+import org.jpos.iso.SunJSSESocketFactory;
 import org.jpos.iso.channel.*;
 import org.jpos.iso.packager.GenericPackager;
 import org.jpos.q2.Q2;
 import org.jpos.q2.QFactory;
 import org.jpos.q2.iso.ChannelAdaptor;
 import org.jpos.q2.iso.QMUX;
+import org.jpos.q2.iso.QServer;
 import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +40,8 @@ public class ISO8583Config extends ConfigTestElement
         PACKAGER = "packager",
         HEADER = "header",
         HOST = "host",
-        PORT = "port";
+        PORT = "port",
+        QBEANKEY = "qbeankey";
 
     // Lookup map of Channel classes that come with jPOS (for GUI dropdown):
     static final Map<String, String> channelClasses = new HashMap<>();
@@ -97,12 +100,7 @@ public class ISO8583Config extends ConfigTestElement
     public void setPort(String port) { setProperty(new StringProperty(PORT, port)); }
     public int getPortAsInt() { return Integer.parseInt(getPort()); }
 
-    protected ChannelAdaptor configureChannel(String name) {
-        ChannelAdaptor channelAdaptor = NameRegistrar.getIfExists(name);
-        if (channelAdaptor != null) return channelAdaptor;
-
-        // Build QBean deployment descriptor in memory:
-        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
+    protected Element getChannelDescriptor(String name) {
         Element channelDescriptor = new Element("channel")
             .setAttribute("name", name)
             .setAttribute("class", getFullChannelClassName())
@@ -118,9 +116,34 @@ public class ISO8583Config extends ConfigTestElement
                 .setAttribute("name", "port")
                 .setAttribute("value", getPort()));
 
+        if (false) { // TODO SSL config
+            channelDescriptor
+                .addContent(new Element("property")
+                    .setAttribute("name", "socketFactory")
+                    .setAttribute("value", SunJSSESocketFactory.class.getName()))
+                .addContent(new Element("property")
+                    .setAttribute("name", "storepassword")
+                    .setAttribute("value", "TODO"))
+                .addContent(new Element("property")
+                    .setAttribute("name", "keypassword")
+                    .setAttribute("value", "TODO"))
+                .addContent(new Element("property")
+                    .setAttribute("name", "keystore")
+                    .setAttribute("value", "TODO"));
+        }
+        return channelDescriptor;
+    }
+
+    // Registers ChannelAdaptor <name>-channel and BaseChannel channel.<name>-channel
+    protected ChannelAdaptor configureChannel(String name) {
+        ChannelAdaptor channelAdaptor = NameRegistrar.getIfExists(name);
+        if (channelAdaptor != null) return channelAdaptor;
+
+        // Build QBean deployment descriptor in memory
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
-            .setAttribute("name", name)
-            .addContent(channelDescriptor)
+            .setAttribute("name", name+"-channel")
+            .addContent(getChannelDescriptor(name))
             .addContent(new Element("in").addContent(name+"-send"))
             .addContent(new Element("out").addContent(name+"-receive"))
             .addContent(new Element("reconnect-delay").addContent(Long.toString(10000))) // TODO configurable
@@ -130,20 +153,44 @@ public class ISO8583Config extends ConfigTestElement
         return channelAdaptor;
     }
 
-    protected QMUX configureMux(String channelName) {
-        // append suffix to avoid QBean name clash:
-        QMUX mux = NameRegistrar.getIfExists("mux."+channelName+"-mux");
+    // Registers QServer <name>-server and ISOServer server.<name>-server
+    protected QServer configureServer(String name) {
+        QServer qserver = NameRegistrar.getIfExists(name);
+        if (qserver != null) return qserver;
+
+        // Build QBean deployment descriptor in memory
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qserver.adoc
+        Element descriptor = new Element("qserver")
+            .setAttribute("name", name+"-server")
+            .addContent(getChannelDescriptor(name))
+            .addContent(new Element("attr")
+                .setAttribute("name", "port")
+                .setAttribute("type", Integer.class.getName())
+                .addContent(getPort()))
+            .addContent(new Element("in").addContent(name+"-receive"))
+            .addContent(new Element("out").addContent(name+"-send"))
+            .addContent(new Element("ready").addContent(name+".ready"));
+
+        qserver = (QServer) deployAndStart(descriptor);
+        return qserver;
+    }
+
+    // Registers QMUX mux.<key>-mux and connects with <key>-receive and <key>-send Space queues
+    // Would usually be called after configureChannel or configureServer.
+    protected QMUX configureMux(String key) {
+        String muxName = key+"-mux";
+        QMUX mux = NameRegistrar.getIfExists("mux."+muxName);
         if (mux != null) return mux;
 
         // Build QBean deployment descriptor in memory
         // (note the in/out queues need to be cross-wired):
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc
         Element descriptor = new Element("qmux")
-            .setAttribute("name", channelName+"-mux")
-            .addContent(new Element("in").addContent(channelName+"-receive"))
-            .addContent(new Element("out").addContent(channelName+"-send"))
-            .addContent(new Element("unhandled").addContent(channelName+"-unhandled"))
-            .addContent(new Element("ready").addContent(channelName+".ready"));
+            .setAttribute("name", muxName)
+            .addContent(new Element("in").addContent(key+"-receive"))
+            .addContent(new Element("out").addContent(key+"-send"))
+            .addContent(new Element("unhandled").addContent(key+"-unhandled"))
+            .addContent(new Element("ready").addContent(key+".ready"));
 
         mux = (QMUX) deployAndStart(descriptor);
         return mux;
@@ -168,25 +215,57 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    // TODO this may have to be synchronized to avoid race conditions with multiple threads starting more than one Q2
-    @Override
-    public void testStarted() {
-        q2 = Q2.getQ2(1000);
+
+    // synchronized to avoid race conditions with multiple threads starting more than one Q2
+    protected synchronized void startQ2() {
+        log.debug("Waiting for Q2 lock");
+        log.debug("Got Q2 lock");
+        q2 = Q2.getQ2();
+        log.debug("Got Q2 instance");
         if (q2 == null) {
-            log.info("Starting Q2");
+            log.debug("Creating Q2");
             q2 = new Q2();
             q2.getLog().setLogger(null); // quieten it TODO configure
         }
         if (!q2.running()) {
+            log.info("Starting Q2");
             q2.start();
+            log.debug("Started Q2");
             boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2startup", 2000)); // TODO give it 2 seconds to start up
+            log.debug("Q2 running");
             if (!ready) {
                 log.error("Failed to start up Q2");
             }
         }
-        // TODO allow for multiple QBean instances with different names:
-        configureChannel("jmeter");
-        configureMux("jmeter");
+    }
+
+    public String getMuxName() {
+        return getPropertyAsString(QBEANKEY)+"-mux";
+    }
+
+    public String getServerName() {
+        return getPropertyAsString(QBEANKEY)+"-server";
+    }
+
+    public String getChannelName() {
+        return getPropertyAsString(QBEANKEY)+"-channel";
+    }
+
+    @Override
+    public void testStarted() {
+        startQ2();
+
+        // allow for multiple QBean instances with distinct names
+        String qbeanKey = String.format("jmeter-%08x", hashCode());
+        setProperty(new StringProperty(QBEANKEY, qbeanKey));
+        log.debug("Setting up QBeans "+qbeanKey);
+
+        if (getHost().isEmpty()) {
+            configureServer(qbeanKey);
+        } else {
+            configureChannel(qbeanKey);
+        }
+        configureMux(qbeanKey);
     }
 
     @Override

@@ -3,13 +3,13 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.*;
 import org.jpos.iso.*;
 import org.jpos.q2.iso.QMUX;
@@ -35,7 +35,7 @@ public class ISO8583Sampler extends AbstractSampler
 
     protected ISO8583Config config = new ISO8583Config();
     protected transient MessageBuilder builder = new MessageBuilder();
-    private transient MUX mux;
+    private transient String muxName;
     private transient ISOBasePackager packager;
 
     @Override
@@ -48,7 +48,9 @@ public class ISO8583Sampler extends AbstractSampler
     public void addTestElement(TestElement el) {
         if (el instanceof ISO8583Config) {
             log.debug("Adding "+el.getName());
-            config.addConfigElement((ISO8583Config)el);
+            ISO8583Config parent = (ISO8583Config)el;
+            config.addConfigElement(parent);
+            muxName = parent.getMuxName();
         }
     }
 
@@ -77,7 +79,11 @@ public class ISO8583Sampler extends AbstractSampler
                 .withMac(getMacAlgorithm(), getMacKey())
                 .build();
         } catch (ISOException e) {
-            log.error("Error packing request", e.getNested()); // TODO unpack nested exception
+            if (log.isDebugEnabled()) {
+                log.debug(ExceptionUtils.getStackTrace(e));
+            } else {
+                log.error(e.toString());
+            }
             result.setResponseMessage(e.toString());
             return result;
         }
@@ -105,17 +111,21 @@ public class ISO8583Sampler extends AbstractSampler
         result.setSuccessful("00".equals(rc));
         result.setResponseData(builder.getMessageAsString(response), null);
         result.setResponseMessage(response.toString());
+
         try {
-            result.setBytes((long)response.pack().length);
+            byte[] bytes = response.pack();
+            result.setBytes((long)bytes.length);
+            result.setBodySize((long)bytes.length);
         } catch (ISOException e) {
-            log.warn("Packaging error - failed to calculate response message size", e.getNested());
+            log.warn("Packaging error - failed to calculate response message size\n{}", e);
         }
         return result;
     }
 
     protected ISOMsg sendMessage(ISOMsg request) throws ISOException {
+        MUX mux;
         try {
-            mux = QMUX.getMUX("jmeter-mux"); // TODO there may be several muxes (via different configs) so need distinct names
+            mux = QMUX.getMUX(muxName);
         } catch (NameRegistrar.NotFoundException e) {
             e.printStackTrace();
             return null;
@@ -172,7 +182,5 @@ public class ISO8583Sampler extends AbstractSampler
     public void setPinKey(String pinKey) { setProperty(PINKEY, pinKey); }
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
-    public void setTimeout(int timeout) {
-        setProperty(new IntegerProperty(TIMEOUT, timeout));
-    }
+    public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }
 }

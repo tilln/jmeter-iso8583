@@ -42,7 +42,7 @@ public class MessageBuilder {
 
     public ISOMsg build() throws ISOException {
         assert packager != null;
-        // TODO calculate cryptograms
+        // TODO how to calculate other cryptograms: ARQC, DUKPT?
         calculatePIN();
         calculateMAC();
         return msg;
@@ -83,22 +83,20 @@ public class MessageBuilder {
             this.pinBlock = ISOUtil.hex2byte(pinBlock);
         }
         if (pinKey != null && !pinKey.isEmpty()) {
-            checkKeyLength(pinKey);
-            // TODO how to pad keys that are no multiple of 8 bytes? concat with itself?
-            this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), pinKey.length()>16 ? "DESede" : "DES");
+            switch (pinKey.length()) {
+                case 16:
+                    this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), "DES");
+                    break;
+                case 32:
+                case 48:
+                    this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), "DESede");
+                    break;
+                default:
+                    log.warn("Incorrect PIN key size {}", pinKey);
+                    this.pinKey = null;
+            }
         }
         return this;
-    }
-
-    private void checkKeyLength(String hexKey) {
-        switch (hexKey.length()) {
-            case 16:
-            case 32:
-            case 48:
-                break;
-            default:
-                log.warn("Unusual key length {}", hexKey);
-        }
     }
 
     public MessageBuilder withMac(String macAlgorithm, String macKey) {
@@ -106,6 +104,11 @@ public class MessageBuilder {
             this.macAlgorithm = macAlgorithm;
         }
         if (macKey != null && !macKey.isEmpty()) {
+            if (macKey.length() != 32 && macKey.length() != 48) {
+                log.warn("Incorrect MAC key size {}", macKey);
+                this.macKey = null;
+                return this;
+            }
             Key newKey = new SecretKeySpec(ISOUtil.hex2byte(macKey), this.macAlgorithm);
             if (!newKey.equals(this.macKey)) {
                 /* Only assign new key if it is different, to prevent leaking MacEngineKeys in JCEHandler

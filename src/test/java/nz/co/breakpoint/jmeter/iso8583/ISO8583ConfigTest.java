@@ -20,7 +20,7 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @After
     public void teardown() {
-        instance.testEnded();
+        instance.q2.stop();
     }
 
     @Test
@@ -32,11 +32,11 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @Test
     public void shouldCreateChannel() {
-        ChannelAdaptor channelAdaptor = instance.configureChannel("jmeter");
+        ChannelAdaptor channelAdaptor = instance.startChannelAdaptor();
         assertNotNull(channelAdaptor);
         assertEquals("jmeter-channel", channelAdaptor.getName());
         assertEquals(getDefaultTestConfig().getHost(), channelAdaptor.getHost());
-        assertEquals(getDefaultTestConfig().getPortAsInt(), channelAdaptor.getPort());
+        assertEquals(Integer.parseInt(getDefaultTestConfig().getPort()), channelAdaptor.getPort());
         assertNotNull(NameRegistrar.getIfExists("jmeter-channel"));
         assertNotNull(NameRegistrar.getIfExists("channel.jmeter-channel"));
         assertTrue(channelAdaptor.running());
@@ -44,7 +44,7 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @Test
     public void shouldCreateServer() {
-        QServer qserver = instance.configureServer("jmeter");
+        QServer qserver = instance.startQServer();
         assertNotNull(qserver);
         assertEquals("jmeter-server", qserver.getName());
         assertNotNull(NameRegistrar.getIfExists("jmeter-server"));
@@ -54,7 +54,7 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @Test
     public void shouldCreateMux() {
-        QMUX mux = instance.configureMux("jmeter");
+        QMUX mux = instance.startMux();
         assertNotNull(mux);
         assertEquals("jmeter-mux", mux.getName());
         assertNotNull(NameRegistrar.getIfExists("mux.jmeter-mux"));

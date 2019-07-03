@@ -59,6 +59,7 @@ public class ISO8583TestBase {
         config.setClassname(ASCIIChannel.class.getName());
         config.setHost("localhost");
         config.setPort("10000");
+        config.setProperty(ISO8583Config.CONFIGKEY, "jmeter");
         return config;
     }
 

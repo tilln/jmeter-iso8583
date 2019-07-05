@@ -4,12 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import org.jpos.iso.ISOBasePackager;
+
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOPackager;
 import org.jpos.iso.channel.ASCIIChannel;
-import org.jpos.iso.packager.GenericPackager;
 import org.jpos.iso.packager.XMLPackager;
 
 public class ISO8583TestBase {
@@ -19,14 +18,13 @@ public class ISO8583TestBase {
 //    @ClassRule
 //    public static final JMeterContextResource ctx = new JMeterContextResource();
 
-    public static final String DEFAULT_MAC_KEY = "13131313131313131313131313131313";
+    public static final String DEFAULT_KEY = "13131313131313131313131313131313";
 
-    protected ISOBasePackager defaultPackager;
+    protected String defaultPackagerFile = "src/test/resources/test-packager.xml";
     protected ISOPackager xmlPackager;
 
     public ISO8583TestBase() {
         try {
-            defaultPackager = new GenericPackager("src/test/resources/test-packager.xml");
             xmlPackager = new XMLPackager();
         } catch (ISOException e) {
             e.printStackTrace();
@@ -59,7 +57,7 @@ public class ISO8583TestBase {
         config.setClassname(ASCIIChannel.class.getName());
         config.setHost("localhost");
         config.setPort("10000");
-        config.setProperty(ISO8583Config.CONFIGKEY, "jmeter");
+        config.setProperty(ISO8583Config.CONFIG_KEY, "jmeter");
         return config;
     }
 
@@ -75,6 +73,7 @@ public class ISO8583TestBase {
 
     public ISOMsg getTestMessage() {
         ISOMsg msg = new ISOMsg("0800");
+        msg.setPackager(getDefaultTestConfig().createPackager());
         msg.set(11, "012345");
         msg.set(41, "543210");
         return msg;

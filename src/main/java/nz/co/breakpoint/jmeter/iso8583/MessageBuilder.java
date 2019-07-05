@@ -2,61 +2,40 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.security.Key;
-import java.util.Arrays;
-import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jpos.iso.*;
-import org.jpos.security.jceadapter.JCEHandler;
-import org.jpos.security.jceadapter.JCEHandlerException;
 import org.jpos.tlv.ISOTaggedField;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /* Builds an ISOMsg from elements configured in the JMeter elements.
  */
 public class MessageBuilder {
 
-    private static final Logger log = LoggerFactory.getLogger(ISO8583Sampler.class);
-
-    protected ISOMsg msg = new ISOMsg();
+    protected ISOMsg msg;
     private byte[] packedMsg; // cache a packed version of the message to avoid repeated packing
-    protected String macAlgorithm = "";
-    protected byte[] pinBlock;
-    protected Key pinKey, macKey;
-    protected ISOBasePackager packager; // ISOPackager has no access to field packagers
-    protected JCEHandler jceHandler;
+    protected ISOPackager packager;
 
     public MessageBuilder() {
         this(null);
     }
 
-    public MessageBuilder(ISOBasePackager packager) {
+    public MessageBuilder(ISOPackager packager) {
+        msg = new ISOMsg();
         withPackager(packager);
-        try {
-            jceHandler = new JCEHandler(BouncyCastleProvider.class.getName());
-        } catch (JCEHandlerException e) {
-            log.error("Failed to create JCEHandler", e);
-        }
     }
 
     public ISOMsg build() throws ISOException {
-        assert packager != null;
-        // TODO how to calculate other cryptograms: ARQC, DUKPT?
-        calculatePIN();
-        calculateMAC();
+        pack();
         return msg;
     }
 
-    public MessageBuilder withPackager(ISOBasePackager packager) {
+    public MessageBuilder withPackager(ISOPackager packager) {
         this.packager = packager;
+        msg.setPackager(packager);
         return this;
     }
 
     public MessageBuilder define(Iterable<MessageField> fields) throws ISOException {
         msg = new ISOMsg();
-        assert packager != null;
-        msg.setPackager(packager);
+        msg.setPackager(packager); // may be undefined at this stage
         return extend(fields);
     }
 
@@ -73,52 +52,26 @@ public class MessageBuilder {
                     msg.set(f.getName(), new ISOTaggedField(f.getTag(), new ISOField(subfieldId, f.getContent())));
                 }
             }
+            packedMsg = null; // needs to be packed again
+        }
+        return this;
+    }
+
+    public MessageBuilder pack() throws ISOException {
+        if (packager != null) {
+            msg.setPackager(packager);
             packedMsg = msg.pack();
         }
         return this;
     }
 
-    public MessageBuilder withPin(String pinBlock, String pinKey) {
-        if (pinBlock != null && !pinBlock.isEmpty()) {
-            this.pinBlock = ISOUtil.hex2byte(pinBlock);
-        }
-        if (pinKey != null && !pinKey.isEmpty()) {
-            switch (pinKey.length()) {
-                case 16:
-                    this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), "DES");
-                    break;
-                case 32:
-                case 48:
-                    this.pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKey), "DESede");
-                    break;
-                default:
-                    log.warn("Incorrect PIN key size {}", pinKey);
-                    this.pinKey = null;
-            }
-        }
-        return this;
+    public ISOMsg getMessage() {
+        return msg;
     }
 
-    public MessageBuilder withMac(String macAlgorithm, String macKey) {
-        if (macAlgorithm != null && !macAlgorithm.isEmpty()) {
-            this.macAlgorithm = macAlgorithm;
-        }
-        if (macKey != null && !macKey.isEmpty()) {
-            if (macKey.length() != 32 && macKey.length() != 48) {
-                log.warn("Incorrect MAC key size {}", macKey);
-                this.macKey = null;
-                return this;
-            }
-            Key newKey = new SecretKeySpec(ISOUtil.hex2byte(macKey), this.macAlgorithm);
-            if (!newKey.equals(this.macKey)) {
-                /* Only assign new key if it is different, to prevent leaking MacEngineKeys in JCEHandler
-                 * that only compare keys by reference:
-                 * https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
-                 */
-                this.macKey = newKey;
-            }
-        }
-        return this;
+    public byte[] getPackedMessage() throws ISOException {
+        pack();
+        return packedMsg;
     }
 
     // For SampleResult
@@ -143,46 +96,5 @@ public class MessageBuilder {
             sb.append("\n<!--\n").append(ISOUtil.hexdump(packedMsg)).append("-->");
         }
         return sb.toString();
-    }
-
-    protected void calculateMAC() throws ISOException {
-        if (macKey == null || macAlgorithm.isEmpty() || jceHandler == null) {
-            log.debug("Skipping MAC calculation ({})",
-                macKey == null ? "no key defined" :
-                macAlgorithm.isEmpty() ? "no MAC algorithm defined" :
-                "no JCEHandler defined");
-            return;
-        }
-        int macField = msg.getMaxField() <= 64 ? 64 : 128;
-        int macLength = packager.getFieldPackager(macField).getLength();
-        String dummyMac = String.format("%0" + 2*macLength + "d", 0);
-        msg.set(macField, dummyMac);
-        packedMsg = msg.pack();
-        try {
-            byte[] mac = jceHandler.generateMAC(Arrays.copyOf(packedMsg, packedMsg.length-macLength),
-                    macKey, macAlgorithm);
-            msg.set(macField, ISOUtil.padright(ISOUtil.byte2hex(mac), 2*macLength, 'F'));
-            packedMsg = msg.pack();
-        } catch (JCEHandlerException e) {
-            log.error("MAC calculation failed", e);
-        }
-    }
-
-    protected void calculatePIN() {
-        if (pinKey == null || pinBlock == null || jceHandler == null) {
-            log.debug("Skipping PIN encryption ({})",
-                pinKey == null ? "no key defined" :
-                pinBlock == null ? "no PIN block defined" :
-                "no JCEHandler defined");
-            return;
-        }
-        int pinField = 52; // TODO configurable
-        int pinLength = packager.getFieldPackager(pinField).getLength();
-        try {
-            byte[] encryptedPINBlock = jceHandler.encryptData(pinBlock, pinKey);
-            msg.set(pinField, encryptedPINBlock); // TODO how long? would it ever need padding?
-        } catch (JCEHandlerException e) {
-            log.error("PIN-block encryption failed", e);
-        }
     }
 }

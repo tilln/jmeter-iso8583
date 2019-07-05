@@ -2,7 +2,6 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
-import org.jpos.core.ConfigurationException;
 import org.jpos.iso.ISOMsg;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -29,7 +28,6 @@ public class ISO8583SamplerIT extends ISO8583TestBase {
         instance.addTestElement(config);
         ISOMsg msg = getTestMessage();
         instance.setFields(asMessageFields(msg));
-        instance.setMacAlgorithm("");
         instance.setTimeout(2000);
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);

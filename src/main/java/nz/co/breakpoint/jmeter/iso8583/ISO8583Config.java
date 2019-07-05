@@ -38,10 +38,10 @@ public class ISO8583Config extends ConfigTestElement
         PACKAGER = "packager",
         HEADER = "header",
         HOST = "host",
-        PORT = "port";
-
-    // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
-    protected static final String CONFIGKEY = "configKey";
+        PORT = "port",
+        KEYSTORE = "keystore",
+        STOREPASSWORD = "storePassword",
+        KEYPASSWORD = "keyPassword";
 
     // Lookup map of Channel classes that come with jPOS (for GUI dropdown):
     static final Map<String, String> channelClasses = new HashMap<>();
@@ -63,9 +63,16 @@ public class ISO8583Config extends ConfigTestElement
     static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
 
     protected static transient Q2 q2;
+    // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
+    protected static final String CONFIG_KEY = "configKey";
+
+    protected String getQ2LoggerName() {
+        return log.isDebugEnabled() ? "Q2" : "";
+    }
+
 
     // Instantiate packager from config file
-    public ISOBasePackager createPackager() {
+    public ISOPackager createPackager() {
         log.debug("Creating packager from '{}'", getPackager());
         try {
             return new GenericPackager(getPackager());
@@ -90,6 +97,7 @@ public class ISO8583Config extends ConfigTestElement
             .setAttribute("class", getFullChannelClassName())
             .setAttribute("packager", GenericPackager.class.getName())
             .setAttribute("header", getHeader())
+            .setAttribute("logger", getQ2LoggerName())
             .addContent(new Element("property")
                 .setAttribute("name", "packager-config")
                 .setAttribute("value", getPackager()))
@@ -105,33 +113,33 @@ public class ISO8583Config extends ConfigTestElement
                 .setAttribute("name", "keep-alive")
                 .setAttribute("value", "true"));
 
-        if (false) { // TODO SSL config
+        if (getKeystore() != null && !getKeystore().isEmpty()) {
             channelDescriptor
                 .addContent(new Element("property")
                     .setAttribute("name", "socketFactory")
                     .setAttribute("value", SunJSSESocketFactory.class.getName()))
                 .addContent(new Element("property")
+                        .setAttribute("name", "keystore")
+                        .setAttribute("value", getKeystore()))
+                .addContent(new Element("property")
                     .setAttribute("name", "storepassword")
-                    .setAttribute("value", "TODO"))
+                    .setAttribute("value", getStorePassword()))
                 .addContent(new Element("property")
                     .setAttribute("name", "keypassword")
-                    .setAttribute("value", "TODO"))
-                .addContent(new Element("property")
-                    .setAttribute("name", "keystore")
-                    .setAttribute("value", "TODO"));
+                    .setAttribute("value", getKeyPassword()));
         }
         return channelDescriptor;
     }
 
     // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
     protected ChannelAdaptor startChannelAdaptor() {
-        String key = getPropertyAsString(CONFIGKEY);
+        String key = getPropertyAsString(CONFIG_KEY);
 
         // Build QBean deployment descriptor in memory
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
             .setAttribute("name", getChannelAdaptorName())
-            .setAttribute("logger", "")
+            .setAttribute("logger", getQ2LoggerName())
             .addContent(getChannelDescriptor(key))
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
@@ -145,13 +153,13 @@ public class ISO8583Config extends ConfigTestElement
 
     // Registers QServer <key>-server and ISOServer server.<key>-server
     protected QServer startQServer() {
-        String key = getPropertyAsString(CONFIGKEY);
+        String key = getPropertyAsString(CONFIG_KEY);
 
         // Build QBean deployment descriptor in memory
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qserver.adoc
         Element descriptor = new Element("qserver")
             .setAttribute("name", getQServerName())
-            .setAttribute("logger", "")
+            .setAttribute("logger", getQ2LoggerName())
             .addContent(getChannelDescriptor(key))
             .addContent(new Element("attr")
                 .setAttribute("name", "port")
@@ -169,14 +177,14 @@ public class ISO8583Config extends ConfigTestElement
     // Registers QMUX mux.<key>-mux and connects with <key>-receive and <key>-send Space queues
     // Would usually be called *after* startChannelAdaptor or startQServer.
     protected QMUX startMux() {
-        String key = getPropertyAsString(CONFIGKEY);
+        String key = getPropertyAsString(CONFIG_KEY);
 
         // Build QBean deployment descriptor in memory
         // (note the in/out queues need to be cross-wired):
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc
         Element descriptor = new Element("qmux")
             .setAttribute("name", getMuxName())
-            .setAttribute("logger", "")
+            .setAttribute("logger", getQ2LoggerName())
             .addContent(new Element("in").addContent(key+"-receive"))
             .addContent(new Element("out").addContent(key+"-send"))
             .addContent(new Element("unhandled").addContent(key+"-unhandled"))
@@ -234,9 +242,7 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    // synchronized to avoid race conditions with multiple instances starting more than one Q2
-    // TODO double check if JMeter engine does single-threaded config initialisation
-    protected synchronized void startQ2() {
+    protected void startQ2() {
         q2 = Q2.getQ2();
         if (q2 == null) {
             log.debug("Creating Q2");
@@ -259,18 +265,18 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    protected synchronized void stopQ2() {
-        if (q2.running()) {
+    protected void stopQ2() {
+        if (q2 != null && q2.running()) {
             log.debug("Shutting down Q2");
             q2.stop();
         }
     }
 
-    public String getMuxName() { return getPropertyAsString(CONFIGKEY)+"-mux"; }
+    public String getMuxName() { return getPropertyAsString(CONFIG_KEY)+"-mux"; }
 
-    public String getQServerName() { return getPropertyAsString(CONFIGKEY)+"-server"; }
+    public String getQServerName() { return getPropertyAsString(CONFIG_KEY)+"-server"; }
 
-    public String getChannelAdaptorName() { return getPropertyAsString(CONFIGKEY)+"-channel"; }
+    public String getChannelAdaptorName() { return getPropertyAsString(CONFIG_KEY)+"-channel"; }
 
     protected boolean isServer() { return getHost() == null || getHost().isEmpty(); }
 
@@ -281,13 +287,15 @@ public class ISO8583Config extends ConfigTestElement
         // Create a distinct key for naming this element's QBeans.
         // Needs to be a JMeter property so it gets cloned for the sampler's addTestElement().
         String configKey = String.format("jmeter-%08x", hashCode());
-        setProperty(CONFIGKEY, configKey);
+        setProperty(CONFIG_KEY, configKey);
         log.debug("Setting up QBeans {}", configKey);
 
         if (isServer()) {
             startQServer();
             // TODO wait for incoming connection
-            while (true) {
+            for (long remaining = 60000, abortTime = System.currentTimeMillis()+remaining;
+                    remaining > 0; remaining = abortTime - System.currentTimeMillis()) {
+                log.info("Waiting {} seconds for incoming client connection", remaining/1000);
                 ISOUtil.sleep(1000);
                 try {
                     if (ISOServer.getServer(getQServerName()).getLastConnectedISOChannel() != null) break;
@@ -339,4 +347,13 @@ public class ISO8583Config extends ConfigTestElement
 
     public String getPort() { return getPropertyAsString(PORT); }
     public void setPort(String port) { setProperty(new StringProperty(PORT, port)); }
+
+    public String getKeystore() { return getPropertyAsString(KEYSTORE); }
+    public void setKeystore(String keystore) { setProperty(new StringProperty(KEYSTORE, keystore)); }
+
+    public String getStorePassword() { return getPropertyAsString(STOREPASSWORD); }
+    public void setStorePassword(String storePassword) { setProperty(new StringProperty(STOREPASSWORD, storePassword)); }
+
+    public String getKeyPassword() { return getPropertyAsString(KEYPASSWORD); }
+    public void setKeyPassword(String keyPassword) { setProperty(new StringProperty(KEYPASSWORD, keyPassword)); }
 }

@@ -2,6 +2,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
+import org.jpos.iso.packager.GenericPackager;
 import org.jpos.tlv.ISOTaggedField;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,8 +17,8 @@ public class MessageBuilderTest extends ISO8583TestBase {
     Collection<MessageField> fields;
 
     @Before
-    public void setup() {
-        instance = new MessageBuilder().withPackager(defaultPackager);
+    public void setup() throws ISOException {
+        instance = new MessageBuilder().withPackager(new GenericPackager(defaultPackagerFile));
     }
 
     @Test
@@ -97,7 +98,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
             new MessageField("48.2", "1234", "9f26"),
             new MessageField("48.3", "abcdef", "9F36")
         );
-        ISOMsg msg = instance.define(fields).msg;
+        ISOMsg msg = instance.define(fields).pack().msg;
         assertEquals("303030303030303030303031303030303032309c025f5f9f2604313233349f3606616263646566",
             instance.getMessageBytes());
         assertTrue(msg.hasField(48));
@@ -114,7 +115,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
 
     @Test
     public void shouldPackMessage() throws ISOException {
-        instance.define(asMessageFields(getTestMessage()));
+        instance.define(asMessageFields(getTestMessage())).pack();
         assertTrue(instance.getMessageBytes().matches("[0-9A-F]{16,}"));
         assertTrue(instance.getMessageSize() >= 16);
     }
@@ -127,13 +128,5 @@ public class MessageBuilderTest extends ISO8583TestBase {
         ISOMsg msg = instance.define(fields).msg;
         assertTrue(msg.hasField(52));
         assertEquals("11223344AABBCCDD", msg.getString(52));
-    }
-
-    @Test
-    public void shouldCalculateMAC() throws ISOException {
-        ISOMsg msg = instance.define(asMessageFields(getTestMessage()))
-            .withMac("DESEDE", DEFAULT_MAC_KEY).build();
-        assertTrue(msg.hasField(64));
-        assertTrue(msg.getString(64).matches("[0-9A-F]{16}"));
     }
 }

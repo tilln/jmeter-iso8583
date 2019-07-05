@@ -2,6 +2,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.jmeter.config.ConfigTestElement;
@@ -27,41 +28,33 @@ public class ISO8583Sampler extends AbstractSampler
     // JMeter Property names (appear in script files, so don't change):
     public static final String
         TIMEOUT = "timeout",
-        FIELDS = "fields",
-        MACALGORITHM = "macAlgorithm",
-        MACKEY = "macKey",
-        PINBLOCK = "pinBlock",
-        PINKEY = "pinKey";
+        FIELDS = "fields";
 
     protected ISO8583Config config = new ISO8583Config();
     protected transient MessageBuilder builder = new MessageBuilder();
-    private transient String muxName;
-    private transient ISOBasePackager packager;
 
     @Override
     public boolean applies(ConfigTestElement configElement) {
         return configElement instanceof ISO8583Config;
     }
 
-    // Merges any ISO8583Config element in scope into this sampler when traversing the JMeter test plan
     @Override
     public void addTestElement(TestElement el) {
         if (el instanceof ISO8583Config) {
-            log.debug("Adding "+el.getName());
-            ISO8583Config parent = (ISO8583Config)el;
-            config.addConfigElement(parent);
-            muxName = parent.getMuxName();
-        }
-    }
+            log.debug("Applying config '{}'", el.getName());
+            ISO8583Config config = (ISO8583Config) el;
 
-    // Creates a cached packager instance once for each thread
-    // TODO this means the packager config cannot be variable, but is this required?
-    protected ISOBasePackager getPackager() {
-        if (packager == null) {
-            packager = config.createPackager();
-            // TODO create new packager if config changes
+            // Could merge any ISO8583Config elements in scope into this sampler when traversing the JMeter test plan:
+            //   this.config.addConfigElement(config);
+            // though this is probably not useful, so simply using the closest config element for now:
+            this.config = config;
+
+            // TODO creating the packager up-front when config is applied means the packager config cannot be variable, but is this required?
+            String packager = config.getPackager();
+            if (packager != null && !packager.isEmpty()) {
+                builder.withPackager(config.createPackager());
+            }
         }
-        return packager;
     }
 
     @Override
@@ -73,11 +66,7 @@ public class ISO8583Sampler extends AbstractSampler
 
         ISOMsg request, response;
         try {
-            request = builder.withPackager(getPackager())
-                .define(getFields())
-                .withPin(getPinBlock(), getPinKey())
-                .withMac(getMacAlgorithm(), getMacKey())
-                .build();
+            request = builder.build();
         } catch (ISOException e) {
             if (log.isDebugEnabled()) {
                 log.debug(ExceptionUtils.getStackTrace(e));
@@ -95,7 +84,7 @@ public class ISO8583Sampler extends AbstractSampler
         try {
             response = sendMessage(request);
         } catch (ISOException e) {
-            log.error("ISOException", e.getNested());
+            log.error("Send failed", e.toString());
             result.setResponseMessage(e.toString());
             return result;
         } finally {
@@ -108,7 +97,7 @@ public class ISO8583Sampler extends AbstractSampler
         }
         String rc = response.getString(39);
         result.setResponseCode(rc);
-        result.setSuccessful("00".equals(rc));
+        result.setSuccessful("00".equals(rc)); // TODO not all 0810 responses have a value there
         result.setResponseData(builder.getMessageAsString(response), null);
         result.setResponseMessage(response.toString());
 
@@ -125,9 +114,9 @@ public class ISO8583Sampler extends AbstractSampler
     protected ISOMsg sendMessage(ISOMsg request) throws ISOException {
         MUX mux;
         try {
-            mux = QMUX.getMUX(muxName);
+            mux = QMUX.getMUX(config.getMuxName());
         } catch (NameRegistrar.NotFoundException e) {
-            e.printStackTrace();
+            log.error("Send failed", e);
             return null;
         }
         assert mux != null;
@@ -135,6 +124,15 @@ public class ISO8583Sampler extends AbstractSampler
     }
 
     // For programmatic access from preprocessors...
+    public ISOMsg getMessage() {
+        try {
+            builder.define(getFields());
+        } catch (ISOException e) {
+            log.error("Fields incorrect - {}", e.toString());
+        }
+        return builder.getMessage();
+    }
+
     public void addField(String id, String value) {
         addField(id, value, "");
     }
@@ -151,6 +149,11 @@ public class ISO8583Sampler extends AbstractSampler
             this.setTemporary(prop);
         }
         fields.addItem(prop);
+        try {
+            builder.extend(Arrays.asList(field));
+        } catch (ISOException e) {
+            log.error("Field incorrect - {}", e.toString());
+        }
     }
 
     protected void addFields(Collection<MessageField> fields) {
@@ -167,19 +170,12 @@ public class ISO8583Sampler extends AbstractSampler
 
     public void setFields(Collection<MessageField> fields) {
         setProperty(new CollectionProperty(FIELDS, fields));
+        try {
+            builder.define(fields);
+        } catch (ISOException e) {
+            log.error("Fields incorrect - {}", e);
+        }
     }
-
-    public String getMacAlgorithm() { return getPropertyAsString(MACALGORITHM); }
-    public void setMacAlgorithm(String macAlgorithm) { setProperty(MACALGORITHM, macAlgorithm); }
-
-    public String getMacKey() { return getPropertyAsString(MACKEY); }
-    public void setMacKey(String macKey) { setProperty(MACKEY, macKey); }
-
-    public String getPinBlock() { return getPropertyAsString(PINBLOCK); }
-    public void setPinBlock(String pinBlock) { setProperty(PINBLOCK, pinBlock); }
-
-    public String getPinKey() { return getPropertyAsString(PINKEY); }
-    public void setPinKey(String pinKey) { setProperty(PINKEY, pinKey); }
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
     public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }

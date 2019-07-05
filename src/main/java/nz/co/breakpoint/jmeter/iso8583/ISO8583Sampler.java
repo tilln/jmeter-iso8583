@@ -28,7 +28,9 @@ public class ISO8583Sampler extends AbstractSampler
     // JMeter Property names (appear in script files, so don't change):
     public static final String
         TIMEOUT = "timeout",
-        FIELDS = "fields";
+        FIELDS = "fields",
+        RCFIELD = "responseCodeField",
+        RCSUCCESS = "successResponseCode";
 
     protected ISO8583Config config = new ISO8583Config();
     protected transient MessageBuilder builder = new MessageBuilder();
@@ -44,12 +46,9 @@ public class ISO8583Sampler extends AbstractSampler
             log.debug("Applying config '{}'", el.getName());
             ISO8583Config config = (ISO8583Config) el;
 
-            // Could merge any ISO8583Config elements in scope into this sampler when traversing the JMeter test plan:
-            //   this.config.addConfigElement(config);
-            // though this is probably not useful, so simply using the closest config element for now:
-            this.config = config;
+            // Merge any ISO8583Config elements in scope into this sampler when traversing the JMeter test plan:
+            this.config.addConfigElement(config);
 
-            // TODO creating the packager up-front when config is applied means the packager config cannot be variable, but is this required?
             String packager = config.getPackager();
             if (packager != null && !packager.isEmpty()) {
                 builder.withPackager(config.createPackager());
@@ -95,9 +94,15 @@ public class ISO8583Sampler extends AbstractSampler
             result.setResponseMessage("Timeout");
             return result;
         }
-        String rc = response.getString(39);
+        String rcField = getResponseCodeField();
+        String rc = response.getString(rcField);
         result.setResponseCode(rc);
-        result.setSuccessful("00".equals(rc)); // TODO not all 0810 responses have a value there
+        String success = getSuccessResponseCode();
+        result.setSuccessful( // default to true if no field or success value defined
+            success == null || success.isEmpty() ||
+            rcField == null || rcField.isEmpty() ||
+            success.equals(rc)
+        );
         result.setResponseData(builder.getMessageAsString(response), null);
         result.setResponseMessage(response.toString());
 
@@ -179,4 +184,11 @@ public class ISO8583Sampler extends AbstractSampler
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
     public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }
+
+    public String getResponseCodeField() { return getPropertyAsString(RCFIELD); }
+    public void setResponseCodeField(String responseCodeField) { setProperty(RCFIELD, responseCodeField); }
+
+    public String getSuccessResponseCode() { return getPropertyAsString(RCSUCCESS); }
+    public void setSuccessResponseCode(String successResponseCode) { setProperty(RCSUCCESS, successResponseCode); }
+
 }

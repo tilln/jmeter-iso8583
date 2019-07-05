@@ -92,6 +92,16 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     protected Element getChannelDescriptor(String name) {
+        final String channelClass = getFullChannelClassName(), packager = getPackager();
+        if (channelClass == null || channelClass.isEmpty()) {
+            log.warn("Channel class undefined - cannot create channel");
+            return null;
+        }
+        if (packager == null || packager.isEmpty()) {
+            log.warn("Packager config undefined - cannot create channel");
+            return null;
+        }
+
         Element channelDescriptor = new Element("channel")
             .setAttribute("name", name)
             .setAttribute("class", getFullChannelClassName())
@@ -133,14 +143,25 @@ public class ISO8583Config extends ConfigTestElement
 
     // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
     protected ChannelAdaptor startChannelAdaptor() {
-        String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIG_KEY);
+        Element channelDescriptor = getChannelDescriptor(key);
+        if (channelDescriptor == null) return null;
 
+        final String port = getPort(), host = getHost();
+        if (host == null || host.isEmpty()) {
+            log.warn("Hostname undefined, cannot start ChannelAdaptor");
+            return null;
+        }
+        if (port == null || port.isEmpty()) {
+            log.warn("Port undefined, cannot start ChannelAdaptor");
+            return null;
+        }
         // Build QBean deployment descriptor in memory
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
             .setAttribute("name", getChannelAdaptorName())
             .setAttribute("logger", getQ2LoggerName())
-            .addContent(getChannelDescriptor(key))
+            .addContent(channelDescriptor)
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
             .addContent(new Element("reconnect-delay").addContent(Long.toString(10000))) // TODO configurable
@@ -153,8 +174,15 @@ public class ISO8583Config extends ConfigTestElement
 
     // Registers QServer <key>-server and ISOServer server.<key>-server
     protected QServer startQServer() {
-        String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIG_KEY);
+        Element channelDescriptor = getChannelDescriptor(key);
+        if (channelDescriptor == null) return null;
 
+        final String port = getPort();
+        if (port == null || port.isEmpty()) {
+            log.warn("Port undefined, cannot start QServer");
+            return null;
+        }
         // Build QBean deployment descriptor in memory
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qserver.adoc
         Element descriptor = new Element("qserver")
@@ -177,7 +205,7 @@ public class ISO8583Config extends ConfigTestElement
     // Registers QMUX mux.<key>-mux and connects with <key>-receive and <key>-send Space queues
     // Would usually be called *after* startChannelAdaptor or startQServer.
     protected QMUX startMux() {
-        String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIG_KEY);
 
         // Build QBean deployment descriptor in memory
         // (note the in/out queues need to be cross-wired):
@@ -216,22 +244,25 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     protected void stopChannelAdaptor() {
-        stopAndUndeploy(getChannelAdaptorName());
+        stopAndUndeploy(NameRegistrar.getIfExists(getChannelAdaptorName()));
     }
 
     protected void stopQServer() {
-        stopAndUndeploy(getQServerName());
+        stopAndUndeploy(NameRegistrar.getIfExists(getQServerName()));
     }
 
     protected void stopMux() {
-        stopAndUndeploy(getMuxName());
+        try {
+            stopAndUndeploy((QMUX)QMUX.getMUX(getMuxName()));
+        } catch (NameRegistrar.NotFoundException ignoreBecauseItWasntRunning) {}
     }
 
-    protected void stopAndUndeploy(String key) {
+    protected void stopAndUndeploy(QBeanSupport qbean) {
+        if (qbean == null) return;
         QFactory qFactory = q2.getFactory();
+        final String key = qbean.getName();
         try {
             log.debug("Undeploying {}", key);
-            Object qbean = new QBeanSupport(); // TODO
             ObjectName objectName = new ObjectName(Q2.QBEAN_NAME+key);
             qFactory.destroyQBean(q2, objectName, qbean);
         } catch (MalformedObjectNameException | InstanceAlreadyExistsException | InstanceNotFoundException |
@@ -257,7 +288,7 @@ public class ISO8583Config extends ConfigTestElement
             log.info("Starting Q2");
             q2.start();
             log.debug("Started Q2");
-            boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2startup", 2000)); // TODO give it 2 seconds to start up
+            boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2startup", 2000));
             log.debug("Q2 ready: {}", ready);
             if (!ready) {
                 log.error("Failed to start up Q2");
@@ -288,19 +319,22 @@ public class ISO8583Config extends ConfigTestElement
         // Needs to be a JMeter property so it gets cloned for the sampler's addTestElement().
         String configKey = String.format("jmeter-%08x", hashCode());
         setProperty(CONFIG_KEY, configKey);
-        log.debug("Setting up QBeans {}", configKey);
+        log.debug("'{}' setting up QBeans {}", getName(), configKey);
 
         if (isServer()) {
-            startQServer();
-            // TODO wait for incoming connection
-            for (long remaining = 60000, abortTime = System.currentTimeMillis()+remaining;
-                    remaining > 0; remaining = abortTime - System.currentTimeMillis()) {
-                log.info("Waiting {} seconds for incoming client connection", remaining/1000);
+            QServer qserver = startQServer();
+            if (qserver == null) return;
+
+            long waitTime = JMeterUtils.getPropDefault("jmeter.iso8583.incomingConnectionTimeout", 60000);
+            long abortTime = System.currentTimeMillis()+waitTime;
+            for (; waitTime > 0; waitTime = abortTime - System.currentTimeMillis()) {
+                log.info("Waiting {} seconds for incoming client connection", waitTime/1000);
                 ISOUtil.sleep(1000);
                 try {
                     if (ISOServer.getServer(getQServerName()).getLastConnectedISOChannel() != null) break;
                 } catch (NameRegistrar.NotFoundException e) {
-                    e.printStackTrace();
+                    log.error("ISOServer not found", e);
+                    return;
                 }
             }
         } else {

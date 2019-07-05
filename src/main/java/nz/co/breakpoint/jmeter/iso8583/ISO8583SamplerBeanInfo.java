@@ -25,12 +25,19 @@ public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "content", "tag", "comment"});
 
         createPropertyGroup("Response", new String[]{
-            TIMEOUT,
+            TIMEOUT, RCFIELD, RCSUCCESS,
         });
         p = property(TIMEOUT);
         p.setPropertyEditorClass(IntegerPropertyEditor.class);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, 60000); // 1 minute
 
+        p = property(RCFIELD);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, String.valueOf(ISO8583TestElement.RESPONSE_CODE_FIELD_NO));
+
+        p = property(RCSUCCESS);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "00");
     }
 }

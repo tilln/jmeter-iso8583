@@ -29,11 +29,8 @@ public class ISO8583Crypto extends AbstractTestElement
     public static final String
         MACALGORITHM = "macAlgorithm",
         MACKEY = "macKey",
-        PINBLOCK = "pinBlock",
-        PINKEY = "pinKey",
-        PINFIELD = "pinField";
-
-    public static int DEFAULT_PIN_FIELD = 52, MAC_FIELD = 64;
+        PINFIELD = "pinField",
+        PINKEY = "pinKey";
 
     protected JCEHandler jceHandler;
     protected Key macKey, pinKey;
@@ -52,14 +49,14 @@ public class ISO8583Crypto extends AbstractTestElement
         Sampler current = context.getCurrentSampler();
         if (!(current instanceof ISO8583Sampler)) return;
 
-        log.debug("Processing sampler \""+current.getName()+"\"");
+        log.debug("Processing sampler '{}'", current.getName());
         ISO8583Sampler sampler = (ISO8583Sampler)current;
 
         if (jceHandler == null) {
             log.warn("JCEHandler undefined");
             return;
         }
-        calculatePIN(sampler);
+        encryptPINBlock(sampler);
         // TODO how to calculate other cryptograms: ARQC, DUKPT?
         calculateMAC(sampler);
     }
@@ -93,7 +90,7 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Packager undefined, skipping MAC calculation");
             return;
         }
-        int macField = msg.getMaxField() <= MAC_FIELD ? MAC_FIELD : 2*MAC_FIELD;
+        int macField = msg.getMaxField() <= MAC_FIELD_NO ? MAC_FIELD_NO : 2*MAC_FIELD_NO;
         int macLength = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField).getLength();
         String dummyMac = String.format("%0" + 2*macLength + "d", 0);
         msg.set(macField, dummyMac);
@@ -108,15 +105,15 @@ public class ISO8583Crypto extends AbstractTestElement
         }
     }
 
-    protected void calculatePIN(ISO8583Sampler sampler) {
-        String pinKeyHex = getPinKey(), pinBlock = getPinBlock();
+    protected void encryptPINBlock(ISO8583Sampler sampler) {
+        String pinKeyHex = getPinKey(), pinField = getPinField();
 
-        if (pinBlock == null || pinBlock.isEmpty()) {
-            log.debug("No PIN block defined, skipping PIN encryption");
+        if (pinField == null || pinField.isEmpty()) {
+            log.debug("No PIN field defined, skipping PIN Block encryption");
             return;
         }
         if (pinKeyHex == null || pinKeyHex.isEmpty()) {
-            log.debug("No PIN key defined, skipping PIN encryption");
+            log.debug("No PIN key defined, skipping PIN Block encryption");
             return;
         }
         switch (pinKeyHex.length()) {
@@ -131,11 +128,17 @@ public class ISO8583Crypto extends AbstractTestElement
                 log.warn("Incorrect PIN key size {}", pinKeyHex);
                 return;
         }
+        ISOMsg msg = sampler.getMessage();
+        if (!msg.hasField(pinField)) {
+            log.debug("No PIN Block defined, skipping PIN Block encryption");
+        }
+        String clearPinBlock = msg.getString(pinField);
+
         try {
-            byte[] encryptedPINBlock = jceHandler.encryptData(ISOUtil.hex2byte(pinBlock), pinKey);
-            sampler.addField(getPinField(), ISOUtil.byte2hex(encryptedPINBlock));
+            byte[] encryptedPinBlock = jceHandler.encryptData(ISOUtil.hex2byte(clearPinBlock), pinKey);
+            sampler.addField(pinField, ISOUtil.byte2hex(encryptedPinBlock));
         } catch (JCEHandlerException e) {
-            log.error("PIN-block encryption failed", e);
+            log.error("PIN Block encryption failed", e);
         }
     }
 
@@ -144,9 +147,6 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getMacKey() { return getPropertyAsString(MACKEY); }
     public void setMacKey(String macKey) { setProperty(MACKEY, macKey); }
-
-    public String getPinBlock() { return getPropertyAsString(PINBLOCK); }
-    public void setPinBlock(String pinBlock) { setProperty(PINBLOCK, pinBlock); }
 
     public String getPinKey() { return getPropertyAsString(PINKEY); }
     public void setPinKey(String pinKey) { setProperty(PINKEY, pinKey); }

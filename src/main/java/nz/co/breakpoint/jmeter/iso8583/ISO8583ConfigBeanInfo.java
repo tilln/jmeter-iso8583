@@ -12,16 +12,19 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
     public ISO8583ConfigBeanInfo() {
         super(ISO8583Config.class);
 
-        createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT, KEYSTORE, STOREPASSWORD, KEYPASSWORD,
-        });
         PropertyDescriptor p;
 
+        createPropertyGroup("Channel", new String[]{
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT,
+        });
+
         p = property(CLASSNAME);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, getDefaultChannelClass());
         p.setValue(TAGS, getChannelClasses());
 
         p = property(PACKAGER);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setPropertyEditorClass(FileEditor.class);
         p.setValue(DEFAULT, "");
 
@@ -32,7 +35,12 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "");
 
         p = property(PORT);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        createPropertyGroup("SSL", new String[]{
+             KEYSTORE, STOREPASSWORD, KEYPASSWORD,
+        });
 
         p = property(KEYSTORE);
         p.setPropertyEditorClass(FileEditor.class);

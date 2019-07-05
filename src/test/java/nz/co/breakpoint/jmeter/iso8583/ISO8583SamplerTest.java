@@ -11,16 +11,16 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
     @Test
     public void shouldApplyClosestConfig() {
         ISO8583Config inner = new ISO8583Config();
-        inner.setHost("NOT_THIS");
-        ISO8583Config outer = new ISO8583Config();
+        inner.setHost("THIS");
         inner.setPackager(defaultPackagerFile);
-        outer.setHost("THIS");
+        ISO8583Config outer = new ISO8583Config();
+        outer.setHost("NOT_THIS");
         outer.setPort("PORT");
         instance.addTestElement(inner);
         instance.addTestElement(outer);
 
-        assertEquals(outer.getPackager(), instance.config.getPackager());
-        assertEquals(outer.getHost(), instance.config.getHost());
+        assertEquals(inner.getPackager(), instance.config.getPackager());
+        assertEquals(inner.getHost(), instance.config.getHost());
         assertEquals(outer.getPort(), instance.config.getPort());
         assertEquals("", instance.config.getClassname());
     }

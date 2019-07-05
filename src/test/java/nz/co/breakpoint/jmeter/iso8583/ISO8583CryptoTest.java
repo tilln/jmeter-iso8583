@@ -25,7 +25,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         instance.calculateMAC(sampler);
         ISOMsg msg = sampler.getMessage();
         assertNotNull(msg);
-        assertTrue(msg.hasField(instance.MAC_FIELD));
-        assertTrue(msg.getString(instance.MAC_FIELD).matches("[0-9A-F]{16}"));
+        assertTrue(msg.hasField(instance.MAC_FIELD_NO));
+        assertTrue(msg.getString(instance.MAC_FIELD_NO).matches("[0-9A-F]{16}"));
     }
 }

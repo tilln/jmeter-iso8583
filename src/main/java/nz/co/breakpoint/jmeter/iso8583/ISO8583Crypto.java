@@ -85,7 +85,7 @@ public class ISO8583Crypto extends AbstractTestElement
             log.debug("New MAC key instance assigned");
             this.macKey = newKey;
         }
-        ISOMsg msg = sampler.getMessage();
+        ISOMsg msg = sampler.getRequest();
         if (msg.getPackager() == null) {
             log.error("Packager undefined, skipping MAC calculation");
             return;
@@ -128,7 +128,7 @@ public class ISO8583Crypto extends AbstractTestElement
                 log.error("Incorrect PIN key size {}", pinKeyHex);
                 return;
         }
-        ISOMsg msg = sampler.getMessage();
+        ISOMsg msg = sampler.getRequest();
         if (!msg.hasField(pinField)) {
             log.debug("No PIN Block defined, skipping PIN Block encryption");
         }

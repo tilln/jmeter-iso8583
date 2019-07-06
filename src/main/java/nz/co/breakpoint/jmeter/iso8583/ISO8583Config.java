@@ -2,15 +2,20 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.management.*;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.property.CollectionProperty;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.jdom2.Element;
+import org.jdom2.output.XMLOutputter;
 import org.jpos.core.ConfigurationException;
 import org.jpos.iso.*;
 import org.jpos.iso.channel.*;
@@ -25,6 +30,19 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/* This class is effectively a wrapper for the jPOS Q2 container and associated QBeans configuration.
+ * It manages either set of 3 components (depending on client or server mode):
+ * - ChannelAdaptor, Channel and QMUX
+ * - QServer, Channel and QMUX
+ * While normally those would be configured by placing corresponding XML files into a <deploy> folder,
+ * here it is done dynamically via transforming configuration properties from the JMeter Test Plan
+ * into in-memory deployment descriptors (JDOM Elements).
+ * These descriptors are then used to create and deploy QBeans at the test start and destroy them at the end.
+ * Advanced, Channel-dependent configuration properties can be specified via name/value pairs
+ * For example, <srcid> and <dstid> for VAPChannel's Base1Header
+ *   https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237
+ * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
+ */
 public class ISO8583Config extends ConfigTestElement
         implements ISO8583TestElement, TestBean, Serializable, TestStateListener {
 
@@ -39,6 +57,7 @@ public class ISO8583Config extends ConfigTestElement
         HEADER = "header",
         HOST = "host",
         PORT = "port",
+        CONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
         KEYPASSWORD = "keyPassword";
@@ -69,7 +88,6 @@ public class ISO8583Config extends ConfigTestElement
     protected String getQ2LoggerName() {
         return log.isDebugEnabled() ? "Q2" : "";
     }
-
 
     // Instantiate packager from config file
     public ISOPackager createPackager() {
@@ -116,12 +134,7 @@ public class ISO8583Config extends ConfigTestElement
                 .setAttribute("value", getHost()))
             .addContent(new Element("property")
                 .setAttribute("name", "port")
-                .setAttribute("value", getPort()))
-            .addContent(new Element("property")
-                // Setting the keep-alive (true/false) would set the low level SO_KEEPALIVE flag at the socket level
-                // for situations where no network management messages are exchanged.
-                .setAttribute("name", "keep-alive")
-                .setAttribute("value", "true"));
+                .setAttribute("value", getPort()));
 
         if (getKeystore() != null && !getKeystore().isEmpty()) {
             channelDescriptor
@@ -138,6 +151,12 @@ public class ISO8583Config extends ConfigTestElement
                     .setAttribute("name", "keypassword")
                     .setAttribute("value", getKeyPassword()));
         }
+
+        getChannelConfig().forEach(p ->
+            channelDescriptor.addContent(new Element("property")
+                .setAttribute("name", p.getName())
+                .setAttribute("value", p.getValue()))
+        );
         return channelDescriptor;
     }
 
@@ -227,9 +246,12 @@ public class ISO8583Config extends ConfigTestElement
     // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/q2/Q2.java#L560
     // but using more accessible QFactory methods:
     protected Object deployAndStart(Element descriptor) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deploying {}\n{}", descriptor.getName(),
+                new XMLOutputter().outputString(descriptor));
+        }
         QFactory qFactory = q2.getFactory();
         try {
-            log.debug("Deploying {}", descriptor.getName());
             Object qbean = qFactory.instantiate(q2, descriptor);
             ObjectInstance obj = qFactory.createQBean(q2, descriptor, qbean);
             qFactory.startQBean(q2, obj.getObjectName());
@@ -277,7 +299,7 @@ public class ISO8583Config extends ConfigTestElement
         q2 = Q2.getQ2();
         if (q2 == null) {
             log.debug("Creating Q2");
-            q2 = new Q2();
+            q2 = new Q2(JMeterUtils.getPropDefault("jmeter.iso8583.q2DeployDir", Q2.DEFAULT_DEPLOY_DIR));
             if (!log.isDebugEnabled()) {
                 q2.getLog().setLogger(null); // quieten it TODO configure
             }
@@ -288,7 +310,7 @@ public class ISO8583Config extends ConfigTestElement
             log.info("Starting Q2");
             q2.start();
             log.debug("Started Q2");
-            boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2startup", 2000));
+            boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2StartupTimeout", 2000));
             log.debug("Q2 ready: {}", ready);
             if (!ready) {
                 log.error("Failed to start up Q2");
@@ -381,6 +403,21 @@ public class ISO8583Config extends ConfigTestElement
 
     public String getPort() { return getPropertyAsString(PORT); }
     public void setPort(String port) { setProperty(new StringProperty(PORT, port)); }
+
+    // Need Collection getter/setter for TestBean GUI
+    public Collection<ChannelConfigItem> getChannelConfig() {
+        Collection<ChannelConfigItem> items = new ArrayList<>();
+        JMeterProperty cfg = getProperty(CONFIG);
+        if (cfg instanceof CollectionProperty) {
+            ((CollectionProperty)cfg).iterator()
+                .forEachRemaining(p -> items.add((ChannelConfigItem) p.getObjectValue()));
+        }
+        return items;
+    }
+
+    public void setChannelConfig(Collection<ChannelConfigItem> items) {
+        setProperty(new CollectionProperty(CONFIG, items));
+    }
 
     public String getKeystore() { return getPropertyAsString(KEYSTORE); }
     public void setKeystore(String keystore) { setProperty(new StringProperty(KEYSTORE, keystore)); }

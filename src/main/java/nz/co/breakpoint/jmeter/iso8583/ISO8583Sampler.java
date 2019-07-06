@@ -27,13 +27,16 @@ public class ISO8583Sampler extends AbstractSampler
 
     // JMeter Property names (appear in script files, so don't change):
     public static final String
-        TIMEOUT = "timeout",
+        HEADER = "header",
+        TRAILER = "trailer",
         FIELDS = "fields",
+        TIMEOUT = "timeout",
         RCFIELD = "responseCodeField",
         RCSUCCESS = "successResponseCode";
 
     protected ISO8583Config config = new ISO8583Config();
     protected transient MessageBuilder builder = new MessageBuilder();
+    protected transient ISOMsg response;
 
     @Override
     public boolean applies(ConfigTestElement configElement) {
@@ -63,7 +66,7 @@ public class ISO8583Sampler extends AbstractSampler
         result.setDataType(SampleResult.TEXT);
         result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
 
-        ISOMsg request, response;
+        ISOMsg request;
         try {
             request = builder.build();
         } catch (ISOException e) {
@@ -130,14 +133,18 @@ public class ISO8583Sampler extends AbstractSampler
         return mux.request(request, getTimeout());
     }
 
-    // For programmatic access from preprocessors...
-    public ISOMsg getMessage() {
+    // For programmatic access from Pre-/PostProcessors...
+    public ISOMsg getRequest() {
         try {
             builder.define(getFields());
         } catch (ISOException e) {
             log.error("Fields incorrect - {}", e.toString());
         }
         return builder.getMessage();
+    }
+
+    public ISOMsg getResponse() {
+        return response;
     }
 
     public void addField(String id, String value) {
@@ -167,11 +174,26 @@ public class ISO8583Sampler extends AbstractSampler
         fields.forEach(f -> addField(f));
     }
 
+    public String getHeader() { return getPropertyAsString(HEADER); }
+    public void setHeader(String header) {
+        setProperty(HEADER, header);
+        builder.withHeader(header);
+    }
+
+    public String getTrailer() { return getPropertyAsString(TRAILER); }
+    public void setTrailer(String trailer) {
+        setProperty(TRAILER, trailer);
+        builder.withHeader(trailer);
+    }
+
     // Need Collection getter/setter for TestBean GUI
     public Collection<MessageField> getFields() {
         Collection<MessageField> fields = new ArrayList<>();
-        ((CollectionProperty) getProperty(FIELDS)).iterator()
-            .forEachRemaining(p -> fields.add((MessageField)p.getObjectValue()));
+        JMeterProperty cfg = getProperty(FIELDS);
+        if (cfg instanceof CollectionProperty) {
+            ((CollectionProperty)cfg).iterator()
+                .forEachRemaining(p -> fields.add((MessageField) p.getObjectValue()));
+        }
         return fields;
     }
 

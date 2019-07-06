@@ -23,7 +23,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         instance.setMacAlgorithm("DESEDE");
         instance.setMacKey(DEFAULT_KEY);
         instance.calculateMAC(sampler);
-        ISOMsg msg = sampler.getMessage();
+        ISOMsg msg = sampler.getRequest();
         assertNotNull(msg);
         assertTrue(msg.hasField(instance.MAC_FIELD_NO));
         assertTrue(msg.getString(instance.MAC_FIELD_NO).matches("[0-9A-F]{16}"));

@@ -15,14 +15,24 @@ public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Request", new String[]{
-            FIELDS,
+            HEADER, TRAILER, FIELDS,
         });
+        p = property(HEADER);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(TRAILER);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
         p = property(FIELDS);
         p.setPropertyEditorClass(TableEditor.class);
         p.setValue(TableEditor.CLASSNAME, MessageField.class.getName());
-        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults("fields.tableHeaders",
+        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(FIELDS+".tableHeaders",
             new String[]{"Field", "Content", "Tag", "Comment"}));
-        p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "content", "tag", "comment"});
+        p.setValue(TableEditor.OBJECT_PROPERTIES,
+            // name and comment are standard TestElement members:
+            new String[]{"name", MessageField.CONTENT, MessageField.TAG, "comment"});
 
         createPropertyGroup("Response", new String[]{
             TIMEOUT, RCFIELD, RCSUCCESS,

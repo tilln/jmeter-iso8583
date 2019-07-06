@@ -8,7 +8,7 @@ import org.apache.jmeter.testelement.AbstractTestElement;
  */
 public class MessageField extends AbstractTestElement {
 
-    private static final String CONTENT = "content", TAG = "tag";
+    static final String CONTENT = "content", TAG = "tag";
 
     public MessageField() {}
 

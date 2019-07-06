@@ -3,6 +3,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.beans.PropertyDescriptor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Config.*;
 import org.apache.jmeter.testbeans.gui.FileEditor;
+import org.apache.jmeter.testbeans.gui.TableEditor;
 
 /* Describes the ISO8583Config GUI.
  * Most values may be left undefined so they can be merged with other config elements.
@@ -15,7 +16,7 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT,
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT, CONFIG,
         });
 
         p = property(CLASSNAME);
@@ -37,6 +38,15 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p = property(PORT);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        p = property(CONFIG);
+        p.setPropertyEditorClass(TableEditor.class);
+        p.setValue(TableEditor.CLASSNAME, ChannelConfigItem.class.getName());
+        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(CONFIG+".tableHeaders",
+            new String[]{"Name", "Value"}));
+        p.setValue(TableEditor.OBJECT_PROPERTIES,
+            new String[]{"name", ChannelConfigItem.VALUE}); // name is a standard TestElement member
+        p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "value"});
 
         createPropertyGroup("SSL", new String[]{
              KEYSTORE, STOREPASSWORD, KEYPASSWORD,

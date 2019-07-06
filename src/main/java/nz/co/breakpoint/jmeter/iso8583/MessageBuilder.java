@@ -10,32 +10,38 @@ import org.jpos.tlv.ISOTaggedField;
 public class MessageBuilder {
 
     protected ISOMsg msg;
-    private byte[] packedMsg; // cache a packed version of the message to avoid repeated packing
-    protected ISOPackager packager;
+    protected byte[] packedMsg; // cache a packed version of the message to avoid repeated packing
 
     public MessageBuilder() {
-        this(null);
-    }
-
-    public MessageBuilder(ISOPackager packager) {
         msg = new ISOMsg();
-        withPackager(packager);
     }
 
     public ISOMsg build() throws ISOException {
-        pack();
+        pack(); // fail fast if it doesn't pack ok
         return msg;
     }
 
     public MessageBuilder withPackager(ISOPackager packager) {
-        this.packager = packager;
         msg.setPackager(packager);
         return this;
     }
 
+    public MessageBuilder withHeader(String header) {
+        if (header != null && !header.isEmpty()) {
+            msg.setHeader(ISOUtil.hex2byte(header));
+        }
+        return this;
+    }
+
+    public MessageBuilder withTrailer(String trailer) {
+        if (trailer != null && !trailer.isEmpty()) {
+            msg.setTrailer(ISOUtil.hex2byte(trailer));
+        }
+        return this;
+    }
+
     public MessageBuilder define(Iterable<MessageField> fields) throws ISOException {
-        msg = new ISOMsg();
-        msg.setPackager(packager); // may be undefined at this stage
+        msg = (ISOMsg)msg.clone(new int[0]); // remove all fields, but keep packager etc.
         return extend(fields);
     }
 
@@ -58,10 +64,7 @@ public class MessageBuilder {
     }
 
     public MessageBuilder pack() throws ISOException {
-        if (packager != null) {
-            msg.setPackager(packager);
-            packedMsg = msg.pack();
-        }
+        packedMsg = msg.pack();
         return this;
     }
 

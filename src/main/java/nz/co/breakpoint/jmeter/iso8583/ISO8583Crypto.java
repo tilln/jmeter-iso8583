@@ -53,7 +53,7 @@ public class ISO8583Crypto extends AbstractTestElement
         ISO8583Sampler sampler = (ISO8583Sampler)current;
 
         if (jceHandler == null) {
-            log.warn("JCEHandler undefined");
+            log.warn("JCEHandler undefined"); // should have logged error earlier
             return;
         }
         encryptPINBlock(sampler);
@@ -73,7 +73,7 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         if (macKeyHex.length() != 32 && macKeyHex.length() != 48) {
-            log.warn("Incorrect MAC key size {}", macKeyHex);
+            log.error("Incorrect MAC key size {}", macKeyHex);
             return;
         }
         Key newKey = new SecretKeySpec(ISOUtil.hex2byte(macKeyHex), macAlgorithm);
@@ -125,7 +125,7 @@ public class ISO8583Crypto extends AbstractTestElement
                 pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKeyHex), "DESede");
                 break;
             default:
-                log.warn("Incorrect PIN key size {}", pinKeyHex);
+                log.error("Incorrect PIN key size {}", pinKeyHex);
                 return;
         }
         ISOMsg msg = sampler.getMessage();

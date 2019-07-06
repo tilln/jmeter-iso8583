@@ -82,6 +82,7 @@ public class ISO8583Sampler extends AbstractSampler
         log.debug("sampleStart");
         try {
             response = sendMessage(request);
+            result.setSuccessful(true); // at least we received a response, validate further down
         } catch (ISOException e) {
             log.error("Send failed", e.toString());
             result.setResponseMessage(e.toString());
@@ -95,14 +96,15 @@ public class ISO8583Sampler extends AbstractSampler
             return result;
         }
         String rcField = getResponseCodeField();
-        String rc = response.getString(rcField);
-        result.setResponseCode(rc);
-        String success = getSuccessResponseCode();
-        result.setSuccessful( // default to true if no field or success value defined
-            success == null || success.isEmpty() ||
-            rcField == null || rcField.isEmpty() ||
-            success.equals(rc)
-        );
+        if (rcField != null && !rcField.isEmpty()) {
+            String rc = response.getString(rcField);
+            result.setResponseCode(rc);
+
+            String success = getSuccessResponseCode();
+            if (success != null && !success.isEmpty()) {
+                result.setSuccessful(success.equals(rc));
+            }
+        }
         result.setResponseData(builder.getMessageAsString(response), null);
         result.setResponseMessage(response.toString());
 

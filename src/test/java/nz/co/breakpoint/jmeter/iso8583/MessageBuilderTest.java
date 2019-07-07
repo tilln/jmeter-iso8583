@@ -93,7 +93,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
     @Test
     public void shouldPopulateTLVSubfields() throws ISOException {
         fields = Arrays.asList(
-            new MessageField("48.1", "TODO", "9C"),
+            new MessageField("48.1", "cafe", "9C"),
             new MessageField("48.2", "1234", "9f26"),
             new MessageField("48.3", "abcdef", "9F36")
         );
@@ -102,12 +102,6 @@ public class MessageBuilderTest extends ISO8583TestBase {
         assertEquals("1234", msg.getString("48.2"));
         assertTrue(msg.getComponent("48.2") instanceof ISOTaggedField);
         assertEquals("9f26", ((ISOTaggedField)msg.getComponent("48.2")).getTag());
-    }
-
-    @Test
-    public void shouldPrintMessage() throws ISOException {
-        String dump = MessageBuilder.getMessageAsString(instance.define(asMessageFields(getTestMessage())).getMessage(), true);
-        assertTrue(dump.startsWith("<isomsg>"));
     }
 
     @Test

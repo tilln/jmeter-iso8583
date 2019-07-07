@@ -90,7 +90,7 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Packager undefined, skipping MAC calculation");
             return;
         }
-        int macField = msg.getMaxField() <= MAC_FIELD_NO ? MAC_FIELD_NO : 2*MAC_FIELD_NO;
+        int macField = ((msg.getMaxField() - 1)/MAC_FIELD_NO + 1)*MAC_FIELD_NO; // round up to the next multiple of 64
         int macLength = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField).getLength();
         final String dummyMac = String.format("%0" + 2*macLength + "d", 0);
         msg.set(macField, dummyMac);

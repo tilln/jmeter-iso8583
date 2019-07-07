@@ -77,7 +77,7 @@ public class ISO8583Sampler extends AbstractSampler
 
         // Request details...
         result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
-        result.setSamplerData(MessageBuilder.getMessageAsString(request,true));
+        result.setSamplerData(MessagePrinter.toString(request,true));
         try {
             byte[] bytes = request.pack();
             log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
@@ -106,7 +106,7 @@ public class ISO8583Sampler extends AbstractSampler
         }
 
         // Response details...
-        result.setResponseData(MessageBuilder.getMessageAsString(response, true), null);
+        result.setResponseData(MessagePrinter.toString(response, true), null);
         result.setResponseMessage(response.toString());
 
         try {

@@ -11,26 +11,14 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     ISO8583Sampler sampler = new ISO8583Sampler();
     ISO8583Config config = getDefaultTestConfig();
 
+    static final int[] possibleMACFields = new int[]{
+        ISO8583Crypto.MAC_FIELD_NO, 2*ISO8583Crypto.MAC_FIELD_NO, 3*ISO8583Crypto.MAC_FIELD_NO};
+
     @Before
     public void setup() {
         ctx.context.setCurrentSampler(sampler);
         sampler.addTestElement(config);
         sampler.setFields(asMessageFields(getTestMessage()));
-    }
-
-    @Test
-    public void shouldNotCalculateMACWithMissingValues() {
-        instance.setMacKey("");
-        instance.setMacAlgorithm("DESEDE");
-        instance.process();
-        ISOMsg msg = sampler.getRequest();
-        assertFalse(msg.hasAny(new int[]{instance.MAC_FIELD_NO, 2*instance.MAC_FIELD_NO}));
-
-        instance.setMacKey(DEFAULT_3DES_KEY);
-        instance.setMacAlgorithm("");
-        instance.process();
-        msg = sampler.getRequest();
-        assertFalse(msg.hasAny(new int[]{instance.MAC_FIELD_NO, 2*instance.MAC_FIELD_NO}));
     }
 
     @Test
@@ -70,12 +58,40 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldCalculateMAC() {
+    public void shouldNotCalculateMACWithMissingValues() {
+        instance.setMacKey("");
+        instance.setMacAlgorithm("DESEDE");
+        instance.process();
+        ISOMsg msg = sampler.getRequest();
+        assertFalse(msg.hasAny(possibleMACFields));
+
+        instance.setMacKey(DEFAULT_3DES_KEY);
+        instance.setMacAlgorithm("");
+        instance.process();
+        msg = sampler.getRequest();
+        assertFalse(msg.hasAny(possibleMACFields));
+    }
+
+    @Test
+    public void shouldCalculateMACInLastField() {
         instance.setMacAlgorithm("DESEDE");
         instance.setMacKey(DEFAULT_3DES_KEY);
         instance.process();
         ISOMsg msg = sampler.getRequest();
-        assertTrue(msg.hasField(instance.MAC_FIELD_NO));
-        assertTrue(msg.getString(instance.MAC_FIELD_NO).matches("[0-9A-F]{16}"));
+        assertTrue(msg.hasField(64));
+        assertTrue(msg.getString(64).matches("[0-9A-F]{16}"));
+        assertEquals(msg.getMaxField(), 64);
+
+        sampler.addField("70", "301");
+        instance.process();
+        msg = sampler.getRequest();
+        assertTrue(msg.hasField(128));
+        assertEquals(128, msg.getMaxField());
+
+        sampler.addField("131", "HELLO");
+        instance.process();
+        msg = sampler.getRequest();
+        assertTrue(msg.hasField(192));
+        assertEquals(192, msg.getMaxField());
     }
 }

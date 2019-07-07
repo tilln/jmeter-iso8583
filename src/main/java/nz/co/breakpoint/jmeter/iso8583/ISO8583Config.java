@@ -91,9 +91,14 @@ public class ISO8583Config extends ConfigTestElement
 
     // Instantiate packager from config file
     public ISOPackager createPackager() {
-        log.debug("Creating packager from '{}'", getPackager());
+        String fileName = getPackager();
+        if (fileName == null || fileName.isEmpty()) {
+            log.warn("Packager config undefined");
+            return null;
+        }
+        log.debug("Creating packager from '{}'", fileName);
         try {
-            return new GenericPackager(getPackager());
+            return new GenericPackager(fileName);
         } catch (ISOException e) {
             log.error("Packager configuration error", e.getNested());
             return null;
@@ -112,11 +117,11 @@ public class ISO8583Config extends ConfigTestElement
     protected Element getChannelDescriptor(String name) {
         final String channelClass = getFullChannelClassName(), packager = getPackager();
         if (channelClass == null || channelClass.isEmpty()) {
-            log.warn("Channel class undefined - cannot create channel");
+            log.error("Channel class undefined - cannot create channel");
             return null;
         }
         if (packager == null || packager.isEmpty()) {
-            log.warn("Packager config undefined - cannot create channel");
+            log.error("Packager config undefined - cannot create channel");
             return null;
         }
 
@@ -168,11 +173,11 @@ public class ISO8583Config extends ConfigTestElement
 
         final String port = getPort(), host = getHost();
         if (host == null || host.isEmpty()) {
-            log.warn("Hostname undefined, cannot start ChannelAdaptor");
+            log.error("Hostname undefined, cannot start ChannelAdaptor");
             return null;
         }
         if (port == null || port.isEmpty()) {
-            log.warn("Port undefined, cannot start ChannelAdaptor");
+            log.error("Port undefined, cannot start ChannelAdaptor");
             return null;
         }
         // Build QBean deployment descriptor in memory
@@ -183,7 +188,8 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(channelDescriptor)
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
-            .addContent(new Element("reconnect-delay").addContent(Long.toString(10000))) // TODO configurable
+            .addContent(new Element("reconnect-delay").addContent(
+                JMeterUtils.getPropDefault("jmeter.iso8583.channelReconnectDelay", "10000")))
             .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
 
         ChannelAdaptor channelAdaptor = (ChannelAdaptor) deployAndStart(descriptor);
@@ -199,7 +205,7 @@ public class ISO8583Config extends ConfigTestElement
 
         final String port = getPort();
         if (port == null || port.isEmpty()) {
-            log.warn("Port undefined, cannot start QServer");
+            log.error("Port undefined, cannot start QServer");
             return null;
         }
         // Build QBean deployment descriptor in memory
@@ -256,10 +262,7 @@ public class ISO8583Config extends ConfigTestElement
             ObjectInstance obj = qFactory.createQBean(q2, descriptor, qbean);
             qFactory.startQBean(q2, obj.getObjectName());
             return qbean;
-        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | InstanceNotFoundException |
-                MBeanException | NotCompliantMBeanException | InvalidAttributeValueException |
-                ReflectionException | ClassNotFoundException | InstantiationException |
-                IllegalAccessException | MalformedURLException | ConfigurationException e) {
+        } catch (Exception e) {
             log.error("Failed to deploy {}", descriptor.getName(), e);
             return null;
         }
@@ -287,10 +290,7 @@ public class ISO8583Config extends ConfigTestElement
             log.debug("Undeploying {}", key);
             ObjectName objectName = new ObjectName(Q2.QBEAN_NAME+key);
             qFactory.destroyQBean(q2, objectName, qbean);
-        } catch (MalformedObjectNameException | InstanceAlreadyExistsException | InstanceNotFoundException |
-                MBeanException | NotCompliantMBeanException | InvalidAttributeValueException |
-                ReflectionException | ClassNotFoundException | InstantiationException |
-                IllegalAccessException | MalformedURLException e) {
+        } catch (Exception e) {
             log.error("Failed to undeploy {}", key, e);
         }
     }
@@ -301,7 +301,7 @@ public class ISO8583Config extends ConfigTestElement
             log.debug("Creating Q2");
             q2 = new Q2(JMeterUtils.getPropDefault("jmeter.iso8583.q2DeployDir", Q2.DEFAULT_DEPLOY_DIR));
             if (!log.isDebugEnabled()) {
-                q2.getLog().setLogger(null); // quieten it TODO configure
+                q2.getLog().setLogger(null); // quieten it TODO redirect QBean exceptions to JMeter logger
             }
         }
         if (q2.running()) {

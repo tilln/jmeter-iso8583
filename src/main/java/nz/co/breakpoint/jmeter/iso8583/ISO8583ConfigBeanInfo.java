@@ -30,9 +30,11 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "");
 
         p = property(HEADER);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
         p = property(HOST);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
         p = property(PORT);

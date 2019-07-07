@@ -32,8 +32,8 @@ public class ISO8583Crypto extends AbstractTestElement
         PINFIELD = "pinField",
         PINKEY = "pinKey";
 
-    protected JCEHandler jceHandler;
-    protected Key macKey, pinKey;
+    protected transient JCEHandler jceHandler;
+    protected transient Key macKey, pinKey;
 
     public ISO8583Crypto() {
         try {
@@ -62,7 +62,7 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateMAC(ISO8583Sampler sampler) {
-        String macKeyHex = getMacKey(), macAlgorithm = getMacAlgorithm();
+        final String macKeyHex = getMacKey(), macAlgorithm = getMacAlgorithm();
 
         if (macAlgorithm == null || macAlgorithm.isEmpty()) {
             log.debug("No MAC algorithm defined, skipping MAC calculation");
@@ -92,7 +92,7 @@ public class ISO8583Crypto extends AbstractTestElement
         }
         int macField = msg.getMaxField() <= MAC_FIELD_NO ? MAC_FIELD_NO : 2*MAC_FIELD_NO;
         int macLength = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField).getLength();
-        String dummyMac = String.format("%0" + 2*macLength + "d", 0);
+        final String dummyMac = String.format("%0" + 2*macLength + "d", 0);
         msg.set(macField, dummyMac);
         try {
             byte[] packedMsg = msg.pack();
@@ -101,12 +101,12 @@ public class ISO8583Crypto extends AbstractTestElement
                     macKey, macAlgorithm);
             sampler.addField(String.valueOf(macField), ISOUtil.padright(ISOUtil.byte2hex(mac), 2*macLength, 'f'));
         } catch (ISOException e) {
-            log.error("MAC calculation failed", e);
+            log.error("MAC calculation failed {}", e.toString(), e);
         }
     }
 
     protected void encryptPINBlock(ISO8583Sampler sampler) {
-        String pinKeyHex = getPinKey(), pinField = getPinField();
+        final String pinKeyHex = getPinKey(), pinField = getPinField();
 
         if (pinField == null || pinField.isEmpty()) {
             log.debug("No PIN field defined, skipping PIN Block encryption");
@@ -129,16 +129,15 @@ public class ISO8583Crypto extends AbstractTestElement
                 return;
         }
         ISOMsg msg = sampler.getRequest();
-        if (!msg.hasField(pinField)) {
+        if (!msg.hasField(pinField) || msg.getString(pinField).isEmpty()) {
             log.debug("No PIN Block defined, skipping PIN Block encryption");
+            return;
         }
-        String clearPinBlock = msg.getString(pinField);
-
         try {
-            byte[] encryptedPinBlock = jceHandler.encryptData(ISOUtil.hex2byte(clearPinBlock), pinKey);
+            byte[] encryptedPinBlock = jceHandler.encryptData(msg.getBytes(pinField), pinKey);
             sampler.addField(pinField, ISOUtil.byte2hex(encryptedPinBlock));
         } catch (JCEHandlerException e) {
-            log.error("PIN Block encryption failed", e);
+            log.error("PIN Block encryption failed {}", e.toString(), e);
         }
     }
 

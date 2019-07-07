@@ -10,15 +10,16 @@ import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOPackager;
 import org.jpos.iso.channel.ASCIIChannel;
 import org.jpos.iso.packager.XMLPackager;
+import org.junit.ClassRule;
 
 public class ISO8583TestBase {
-// TODO we may need some JMeter testbed later on...
-//    @ClassRule
-//    public static final JMeterPropertiesResource props = new JMeterPropertiesResource();
-//    @ClassRule
-//    public static final JMeterContextResource ctx = new JMeterContextResource();
+    @ClassRule
+    public static final JMeterPropertiesResource props = new JMeterPropertiesResource();
+    @ClassRule
+    public static final JMeterContextResource ctx = new JMeterContextResource();
 
-    public static final String DEFAULT_KEY = "13131313131313131313131313131313";
+    public static final String DEFAULT_DES_KEY = "1313131313131313";
+    public static final String DEFAULT_3DES_KEY = "13131313131313131313131313131313";
 
     protected String defaultPackagerFile = "src/test/resources/test-packager.xml";
     protected ISOPackager xmlPackager;
@@ -73,7 +74,6 @@ public class ISO8583TestBase {
 
     public ISOMsg getTestMessage() {
         ISOMsg msg = new ISOMsg("0800");
-        msg.setPackager(getDefaultTestConfig().createPackager());
         msg.set(11, "012345");
         msg.set(41, "543210");
         return msg;

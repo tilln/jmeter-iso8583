@@ -10,30 +10,30 @@ import org.jpos.tlv.ISOTaggedField;
 public class MessageBuilder {
 
     protected ISOMsg msg;
-    protected byte[] packedMsg; // cache a packed version of the message to avoid repeated packing
 
-    public MessageBuilder() {
-        msg = new ISOMsg();
+    public MessageBuilder(ISOPackager packager) {
+        init(packager, null,null);
     }
 
-    public ISOMsg build() throws ISOException {
-        pack(); // fail fast if it doesn't pack ok
+    protected void init(ISOPackager packager, ISOHeader header, byte[] trailer) {
+        msg = new ISOMsg();
+        msg.setPackager(packager);
+        msg.setHeader(header);
+        msg.setTrailer(trailer);
+    }
+
+    public ISOMsg getMessage() {
         return msg;
     }
 
-    public MessageBuilder withPackager(ISOPackager packager) {
-        msg.setPackager(packager);
-        return this;
-    }
-
-    public MessageBuilder withHeader(String header) {
+    public MessageBuilder header(String header) {
         if (header != null && !header.isEmpty()) {
             msg.setHeader(ISOUtil.hex2byte(header));
         }
         return this;
     }
 
-    public MessageBuilder withTrailer(String trailer) {
+    public MessageBuilder trailer(String trailer) {
         if (trailer != null && !trailer.isEmpty()) {
             msg.setTrailer(ISOUtil.hex2byte(trailer));
         }
@@ -41,62 +41,43 @@ public class MessageBuilder {
     }
 
     public MessageBuilder define(Iterable<MessageField> fields) throws ISOException {
-        msg = (ISOMsg)msg.clone(new int[0]); // remove all fields, but keep packager etc.
+        init(msg.getPackager(), msg.getISOHeader(), msg.getTrailer());
         return extend(fields);
     }
 
     public MessageBuilder extend(Iterable<MessageField> fields) throws ISOException {
         if (fields != null) {
             for (MessageField f : fields) {
+                String id = f.getName().trim();
+                if (id.isEmpty()) continue; // ignore incomplete table rows
+
                 if (f.getTag().isEmpty()) {
-                    // no tag => normal ISOField can be set directly:
-                    msg.set(f.getName(), f.getContent());
+                    // no tag => normal ISOField can be set directly (value will be interpreted by field class):
+                    msg.set(id, f.getContent());
                 } else {
                     // tag => ISOTaggedField has to be created explicitly, and needs to know the subfield Id:
-                    int lastDot = f.getName().lastIndexOf('.');
-                    int subfieldId = Integer.parseInt(f.getName().substring(lastDot+1));
-                    msg.set(f.getName(), new ISOTaggedField(f.getTag(), new ISOField(subfieldId, f.getContent())));
+                    int lastDot = id.lastIndexOf('.');
+                    int subfieldId = Integer.parseInt(id.substring(lastDot+1));
+                    msg.set(id, new ISOTaggedField(f.getTag(), new ISOField(subfieldId, f.getContent())));
                 }
             }
-            packedMsg = null; // needs to be packed again
         }
         return this;
     }
 
-    public MessageBuilder pack() throws ISOException {
-        packedMsg = msg.pack();
-        return this;
-    }
-
-    public ISOMsg getMessage() {
-        return msg;
-    }
-
-    public byte[] getPackedMessage() throws ISOException {
-        pack();
-        return packedMsg;
-    }
-
-    // For SampleResult
-    int getMessageSize() {
-        return packedMsg == null ? 0 : packedMsg.length;
-    }
-
-    // For unit tests
-    String getMessageBytes() {
-        return ISOUtil.byte2hex(packedMsg);
-    }
-
-    public static String getMessageAsString(ISOMsg msg) {
+    // TODO extract elsewhere
+    public static String getMessageAsString(ISOMsg msg, boolean hexdump) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         msg.dump(new PrintStream(baos, true), "");
-        return baos.toString();
-    }
-
-    public String getMessageAsString(boolean hexdump) {
-        StringBuilder sb = new StringBuilder(getMessageAsString(msg));
-        if (hexdump && packedMsg != null) {
-            sb.append("\n<!--\n").append(ISOUtil.hexdump(packedMsg)).append("-->");
+        StringBuilder sb = new StringBuilder(baos.toString());
+        if (hexdump && msg.getPackager() != null) {
+            sb.append("\n<!--\n");
+            try {
+                sb.append(ISOUtil.hexdump(msg.pack()));
+            } catch (ISOException e) {
+                sb.append(e.toString());
+            }
+            sb.append("-->");
         }
         return sb.toString();
     }

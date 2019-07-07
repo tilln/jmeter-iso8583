@@ -2,7 +2,6 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
-import org.jpos.iso.packager.GenericPackager;
 import org.jpos.tlv.ISOTaggedField;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,14 +17,14 @@ public class MessageBuilderTest extends ISO8583TestBase {
 
     @Before
     public void setup() throws ISOException {
-        instance = new MessageBuilder().withPackager(new GenericPackager(defaultPackagerFile));
+        instance = new MessageBuilder(getDefaultTestConfig().createPackager());
     }
 
     @Test
     public void shouldAcceptEmptyFields() throws ISOException {
-        ISOMsg msg = instance.define(null).msg;
+        ISOMsg msg = instance.define(null).getMessage();
         assertNotNull(msg);
-        msg = instance.define(Arrays.asList()).msg;
+        msg = instance.define(Arrays.asList()).getMessage();
         assertNotNull(msg);
         assertEquals(0, msg.getMaxField());
     }
@@ -35,7 +34,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
         fields = Arrays.asList(
             new MessageField("0", "0800")
         );
-        ISOMsg msg = instance.define(fields).msg;
+        ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasMTI());
         assertEquals("0800", msg.getMTI());
     }
@@ -51,7 +50,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
             new MessageField("0", "0200"),
             new MessageField("11", "1234")
         );
-        ISOMsg msg = instance.extend(fields).msg;
+        ISOMsg msg = instance.extend(fields).getMessage();
         assertTrue(msg.hasMTI());
         assertTrue(msg.hasFields(new int[]{0, 11, 70}));
         assertEquals("0200", msg.getMTI());
@@ -70,7 +69,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
             new MessageField("0", "0200"),
             new MessageField("11", "1234")
         );
-        ISOMsg msg = instance.define(fields).msg;
+        ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasFields(new int[]{0, 11}));
         assertFalse(msg.hasField("70"));
         assertEquals("0200", msg.getMTI());
@@ -84,7 +83,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
             new MessageField("43.2", "WELLINGTON"),
             new MessageField("43.3", "NZ")
         );
-        ISOMsg msg = instance.define(fields).msg;
+        ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasField(43));
         assertEquals("JMETER", msg.getString("43.1"));
         assertEquals("WELLINGTON", msg.getString("43.2"));
@@ -98,9 +97,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
             new MessageField("48.2", "1234", "9f26"),
             new MessageField("48.3", "abcdef", "9F36")
         );
-        ISOMsg msg = instance.define(fields).pack().msg;
-        assertEquals("303030303030303030303031303030303032309c025f5f9f2604313233349f3606616263646566",
-            instance.getMessageBytes());
+        ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasField(48));
         assertEquals("1234", msg.getString("48.2"));
         assertTrue(msg.getComponent("48.2") instanceof ISOTaggedField);
@@ -109,24 +106,25 @@ public class MessageBuilderTest extends ISO8583TestBase {
 
     @Test
     public void shouldPrintMessage() throws ISOException {
-        String dump = instance.define(asMessageFields(getTestMessage())).getMessageAsString(true);
+        String dump = MessageBuilder.getMessageAsString(instance.define(asMessageFields(getTestMessage())).getMessage(), true);
         assertTrue(dump.startsWith("<isomsg>"));
-    }
-
-    @Test
-    public void shouldPackMessage() throws ISOException {
-        instance.define(asMessageFields(getTestMessage())).pack();
-        assertTrue(instance.getMessageBytes().matches("[0-9A-F]{16,}"));
-        assertTrue(instance.getMessageSize() >= 16);
     }
 
     @Test
     public void shouldPackBinaryFields() throws ISOException {
         fields = Arrays.asList(
-            new MessageField("52", "11223344AABBCCDD")
+            new MessageField("52", "1122334455667788")
         );
-        ISOMsg msg = instance.define(fields).msg;
-        assertTrue(msg.hasField(52));
-        assertEquals("11223344AABBCCDD", msg.getString(52));
+        ISOMsg msg = instance.define(fields).getMessage();
+        assertEquals("00000000000010001122334455667788", new String(msg.pack()));
+    }
+
+    @Test
+    public void shouldPackNonBinaryFields() throws ISOException {
+        fields = Arrays.asList(
+            new MessageField("11", "123456")
+        );
+        ISOMsg msg = instance.define(fields).getMessage();
+        assertEquals("0020000000000000123456", new String(msg.pack()));
     }
 }

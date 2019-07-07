@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
@@ -35,7 +34,7 @@ public class ISO8583Sampler extends AbstractSampler
         RCSUCCESS = "successResponseCode";
 
     protected ISO8583Config config = new ISO8583Config();
-    protected transient MessageBuilder builder = new MessageBuilder();
+    protected transient MessageBuilder builder;
     protected transient ISOMsg response;
 
     @Override
@@ -47,15 +46,10 @@ public class ISO8583Sampler extends AbstractSampler
     public void addTestElement(TestElement el) {
         if (el instanceof ISO8583Config) {
             log.debug("Applying config '{}'", el.getName());
-            ISO8583Config config = (ISO8583Config) el;
-
             // Merge any ISO8583Config elements in scope into this sampler when traversing the JMeter test plan:
-            this.config.addConfigElement(config);
-
-            String packager = config.getPackager();
-            if (packager != null && !packager.isEmpty()) {
-                builder.withPackager(config.createPackager());
-            }
+            config.addConfigElement((ISO8583Config) el);
+            // Make sure all messages have a packager available (to interpret String values correctly):
+            builder = new MessageBuilder(config.createPackager());
         }
     }
 
@@ -64,40 +58,42 @@ public class ISO8583Sampler extends AbstractSampler
         SampleResult result = new SampleResult();
         result.setSampleLabel(getName());
         result.setDataType(SampleResult.TEXT);
-        result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
 
-        ISOMsg request;
-        try {
-            request = builder.build();
-        } catch (ISOException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(ExceptionUtils.getStackTrace(e));
-            } else {
-                log.error(e.toString());
-            }
-            result.setResponseMessage(e.toString());
-            return result;
-        }
-        result.setSamplerData(builder.getMessageAsString(true));
-        result.setSentBytes(builder.getMessageSize());
+        ISOMsg request = getRequest();
 
-        result.sampleStart();
+        // Send the request...
         log.debug("sampleStart");
+        result.sampleStart();
         try {
             response = sendMessage(request);
-            result.setSuccessful(true); // at least we received a response, validate further down
-        } catch (ISOException e) {
-            log.error("Send failed", e.toString());
+        } catch (ISOException | NameRegistrar.NotFoundException e) {
+            log.error("Send failed {}", e.toString(), e);
             result.setResponseMessage(e.toString());
             return result;
         } finally {
             log.debug("sampleEnd");
             result.sampleEnd();
         }
+
+        // Request details...
+        result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
+        result.setSamplerData(MessageBuilder.getMessageAsString(request,true));
+        try {
+            byte[] bytes = request.pack();
+            log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
+            result.setSentBytes((long) bytes.length);
+        } catch (Exception e) {
+            // must be config error, e.g. Channel not running, so would have been thrown on sending above
+            log.warn("Packager error on request. Check config! {}", e.toString(), e);
+        }
+
+        // Response validation...
         if (response == null) {
             result.setResponseMessage("Timeout");
             return result;
         }
+        result.setSuccessful(true); // at least we received a response, so start off as success
+
         String rcField = getResponseCodeField();
         if (rcField != null && !rcField.isEmpty()) {
             String rc = response.getString(rcField);
@@ -108,28 +104,24 @@ public class ISO8583Sampler extends AbstractSampler
                 result.setSuccessful(success.equals(rc));
             }
         }
-        result.setResponseData(builder.getMessageAsString(response), null);
+
+        // Response details...
+        result.setResponseData(MessageBuilder.getMessageAsString(response, true), null);
         result.setResponseMessage(response.toString());
 
         try {
             byte[] bytes = response.pack();
-            result.setBytes((long)bytes.length);
-            result.setBodySize((long)bytes.length);
+            log.debug("Packed response '{}'", ISOUtil.byte2hex(bytes));
+            result.setBytes((long) bytes.length);
+            result.setBodySize((long) bytes.length);
         } catch (ISOException e) {
-            log.warn("Packaging error - failed to calculate response message size\n{}", e);
+            log.warn("Packager error on response. Check config! {}", e.toString(), e);
         }
         return result;
     }
 
-    protected ISOMsg sendMessage(ISOMsg request) throws ISOException {
-        MUX mux;
-        try {
-            mux = QMUX.getMUX(config.getMuxName());
-        } catch (NameRegistrar.NotFoundException e) {
-            log.error("Send failed", e);
-            return null;
-        }
-        assert mux != null;
+    protected ISOMsg sendMessage(ISOMsg request) throws ISOException, NameRegistrar.NotFoundException {
+        MUX mux = QMUX.getMUX(config.getMuxName());
         return mux.request(request, getTimeout());
     }
 
@@ -177,13 +169,13 @@ public class ISO8583Sampler extends AbstractSampler
     public String getHeader() { return getPropertyAsString(HEADER); }
     public void setHeader(String header) {
         setProperty(HEADER, header);
-        builder.withHeader(header);
+        builder.header(header);
     }
 
     public String getTrailer() { return getPropertyAsString(TRAILER); }
     public void setTrailer(String trailer) {
         setProperty(TRAILER, trailer);
-        builder.withHeader(trailer);
+        builder.header(trailer);
     }
 
     // Need Collection getter/setter for TestBean GUI

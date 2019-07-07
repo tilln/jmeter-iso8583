@@ -9,3 +9,10 @@
 * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.24/snakeyaml-1.24.jar)
 * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.11/HdrHistogram-2.1.11.jar)
     
+### Limitations
+
+Some exceptions are currently only logged in the Q2 log but not in the JMeter log:
+- Packager exceptions in ChannelAdaptor on receive,
+- Configuration exceptions when deploying incorrect config (e.g. packager file not found)
+
+Workaround: Log level DEBUG.

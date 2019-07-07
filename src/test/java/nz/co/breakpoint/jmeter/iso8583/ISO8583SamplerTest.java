@@ -27,6 +27,7 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
 
     @Test
     public void shouldRestoreFieldsBetweenIterations() {
+        instance.addTestElement(getDefaultTestConfig());
         instance.setFields(new ArrayList<>());
         instance.addField("0", "0800");
         assertEquals(1, instance.getFields().size());

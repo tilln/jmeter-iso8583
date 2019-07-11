@@ -12,7 +12,7 @@ public class MessagePrinterTest extends ISO8583TestBase {
 
     @Test
     public void shouldPrintMessage() {
-        String dump = MessagePrinter.toString(msg, true);
+        String dump = MessagePrinter.asString(msg, true);
         assertTrue(dump.startsWith("<isomsg>"));
         assertTrue(dump.contains("<field id=\"0\" value=\"0800\"/>"));
         assertTrue(dump.contains("<field id=\"11\" value=\"012345\"/>"));
@@ -23,7 +23,7 @@ public class MessagePrinterTest extends ISO8583TestBase {
     @Test
     public void shouldPrintMessageWIthHexDump() {
         msg.setPackager(getDefaultTestConfig().createPackager());
-        String dump = MessagePrinter.toString(msg, true);
+        String dump = MessagePrinter.asString(msg, true);
         assertTrue(dump.contains("<!--")); // no packager, no hexdump
         assertTrue(dump.contains("0000  30 38 30 30 ")); // ASCII 0800
     }

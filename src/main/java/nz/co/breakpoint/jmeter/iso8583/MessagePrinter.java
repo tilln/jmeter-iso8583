@@ -8,7 +8,11 @@ import org.jpos.iso.ISOUtil;
 
 public class MessagePrinter {
 
-    public static String toString(ISOMsg msg, boolean hexdump) {
+    public static String asString(ISOMsg msg) {
+        return asString(msg, false);
+    }
+
+    public static String asString(ISOMsg msg, boolean hexdump) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         msg.dump(new PrintStream(baos, true), "");
         StringBuilder sb = new StringBuilder(baos.toString());

@@ -1,7 +1,9 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
+import java.beans.PropertyDescriptor;
 import java.util.ResourceBundle;
 import org.apache.jmeter.testbeans.BeanInfoSupport;
+import org.apache.jmeter.testbeans.gui.TableEditor;
 
 public class ISO8583TestElementBeanInfo extends BeanInfoSupport {
 
@@ -17,4 +19,15 @@ public class ISO8583TestElementBeanInfo extends BeanInfoSupport {
             defaults;
     }
 
+    protected PropertyDescriptor createMessageFieldsTableProperty(String propertyName) {
+        PropertyDescriptor p = property(propertyName);
+        p.setPropertyEditorClass(TableEditor.class);
+        p.setValue(TableEditor.CLASSNAME, MessageField.class.getName());
+        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(propertyName+".tableHeaders",
+                new String[]{"Field", "Content", "Tag", "Comment"}));
+        p.setValue(TableEditor.OBJECT_PROPERTIES,
+                // name and comment are standard TestElement members:
+                new String[]{"name", MessageField.CONTENT, MessageField.TAG, "comment"});
+        return p;
+    }
 }

@@ -62,6 +62,12 @@ public class ISO8583TestBase {
         return config;
     }
 
+    public static ISO8583Template getDefaultTestTemplate() {
+        ISO8583Template template = new ISO8583Template();
+        template.addField(new MessageField("11", "STAN"));
+        return template;
+    }
+
     public static Collection<MessageField> asMessageFields(ISOMsg msg) {
         Collection<MessageField> fields = new ArrayList<>();
         for (int i = 0; i <= msg.getMaxField(); ++i) {
@@ -72,7 +78,7 @@ public class ISO8583TestBase {
         return fields;
     }
 
-    public ISOMsg getTestMessage() {
+    public ISOMsg getDefaultTestMessage() {
         ISOMsg msg = new ISOMsg("0800");
         msg.set(11, "012345");
         msg.set(41, "543210");

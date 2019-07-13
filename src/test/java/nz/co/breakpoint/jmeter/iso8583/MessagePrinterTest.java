@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 public class MessagePrinterTest extends ISO8583TestBase {
 
-    ISOMsg msg = getTestMessage();
+    ISOMsg msg = getDefaultTestMessage();
 
     @Test
     public void shouldPrintMessage() {

@@ -2,6 +2,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
+import org.jpos.iso.ISOUtil;
 import org.jpos.tlv.ISOTaggedField;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,20 +89,40 @@ public class MessageBuilderTest extends ISO8583TestBase {
         assertEquals("JMETER", msg.getString("43.1"));
         assertEquals("WELLINGTON", msg.getString("43.2"));
         assertEquals("NZ", msg.getString("43.3"));
+
+        ISOMsg msg2 = instance.define(Arrays.asList(
+            new MessageField("43", "JMETER                   WELLINGTON   NZ")
+        )).getMessage();
+        assertEquals(ISOUtil.byte2hex(msg.pack()), ISOUtil.byte2hex(msg2.pack()));
     }
 
     @Test
-    public void shouldPopulateTLVSubfields() throws ISOException {
+    public void shouldPopulateTaggedSubfields() throws ISOException {
         fields = Arrays.asList(
-            new MessageField("48.1", "cafe", "9C"),
-            new MessageField("48.2", "1234", "9f26"),
-            new MessageField("48.3", "abcdef", "9F36")
+            new MessageField("48.1", "cafe", "a1"),
+            new MessageField("48.2", "1234", "a2"),
+            new MessageField("48.3", "abcdef", "a3")
         );
         ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasField(48));
         assertEquals("1234", msg.getString("48.2"));
         assertTrue(msg.getComponent("48.2") instanceof ISOTaggedField);
-        assertEquals("9f26", ((ISOTaggedField)msg.getComponent("48.2")).getTag());
+        assertEquals("a2", ((ISOTaggedField)msg.getComponent("48.2")).getTag());
+        assertEquals("0000000000010000030a1004cafea204123400a3006abcdef", new String(msg.pack()));
+    }
+
+    @Test
+    public void shouldPopulateTLVSubfields() throws ISOException {
+        fields = Arrays.asList(
+            new MessageField("55.1", "191119", "9a"), // string/numeric
+            new MessageField("55.2", "1234567890abcdef", "9f26")// binary
+        );
+        ISOMsg msg = instance.define(fields).getMessage();
+        assertTrue(msg.hasField(55));
+        assertEquals("1234567890ABCDEF", msg.getString("55.2"));
+        assertTrue(msg.getComponent("55.2") instanceof ISOTaggedField);
+        assertEquals("9f26", ((ISOTaggedField)msg.getComponent("55.2")).getTag());
+        assertEquals("3030303030303030303030303032303000109a031911199f26081234567890abcdef", ISOUtil.byte2hex(msg.pack()));
     }
 
     @Test

@@ -1,7 +1,6 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,7 +15,6 @@ import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.jdom2.Element;
 import org.jdom2.output.XMLOutputter;
-import org.jpos.core.ConfigurationException;
 import org.jpos.iso.*;
 import org.jpos.iso.channel.*;
 import org.jpos.iso.packager.GenericPackager;
@@ -38,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * here it is done dynamically via transforming configuration properties from the JMeter Test Plan
  * into in-memory deployment descriptors (JDOM Elements).
  * These descriptors are then used to create and deploy QBeans at the test start and destroy them at the end.
- * Advanced, Channel-dependent configuration properties can be specified via name/value pairs
+ * Advanced, Channel-dependent configuration properties can be specified via name/value pairs.
  * For example, <srcid> and <dstid> for VAPChannel's Base1Header
  *   https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237
  * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.

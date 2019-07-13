@@ -56,8 +56,9 @@ public class ISO8583Crypto extends AbstractTestElement
             log.warn("JCEHandler undefined"); // should have logged error earlier
             return;
         }
+        // TODO how to represent inputs for key derivation (DUKPT etc)
         encryptPINBlock(sampler);
-        // TODO how to calculate other cryptograms: ARQC, DUKPT?
+        calculateARQC(sampler); // TODO how to represent inputs for ARQC
         calculateMAC(sampler);
     }
 
@@ -73,7 +74,7 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         if (macKeyHex.length() != 32 && macKeyHex.length() != 48) {
-            log.error("Incorrect MAC key size {}", macKeyHex);
+            log.error("Incorrect MAC key length '{}' (expecting 32 or 48 hex digits)", macKeyHex);
             return;
         }
         Key newKey = new SecretKeySpec(ISOUtil.hex2byte(macKeyHex), macAlgorithm);
@@ -125,7 +126,7 @@ public class ISO8583Crypto extends AbstractTestElement
                 pinKey = new SecretKeySpec(ISOUtil.hex2byte(pinKeyHex), "DESede");
                 break;
             default:
-                log.error("Incorrect PIN key size {}", pinKeyHex);
+                log.error("Incorrect PIN key length '{}' (expecting 16, 32 or 48 hex digits)", pinKeyHex);
                 return;
         }
         ISOMsg msg = sampler.getRequest();
@@ -139,6 +140,10 @@ public class ISO8583Crypto extends AbstractTestElement
         } catch (JCEHandlerException e) {
             log.error("PIN Block encryption failed {}", e.toString(), e);
         }
+    }
+
+    protected void calculateARQC(ISO8583Sampler sampler) {
+        // TODO
     }
 
     public String getMacAlgorithm() { return getPropertyAsString(MACALGORITHM); }

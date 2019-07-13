@@ -36,4 +36,25 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
         instance.recoverRunningVersion();
         assertEquals(1, instance.getFields().size());
     }
+
+    @Test
+    public void shouldMergeNestedTemplates() {
+        instance.addTestElement(getDefaultTestConfig());
+        instance.addField("0", "0800");
+        instance.addField("11", "ALREADY_THERE");
+
+        ISO8583Template inner = new ISO8583Template();
+        inner.addField(new MessageField("0", "0000"));
+        inner.addField(new MessageField("41", "THIS"));
+
+        ISO8583Template outer = new ISO8583Template();
+        outer.addField(new MessageField("11", "IGNORED"));
+        outer.addField(new MessageField("41", "NOT_THIS"));
+
+        instance.addTestElement(inner);
+        instance.addTestElement(outer);
+
+        assertEquals(3, instance.getFields().size());
+        assertTrue(instance.getRequest().hasFields(new int[]{0, 11, 41}));
+    }
 }

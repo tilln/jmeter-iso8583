@@ -1,14 +1,13 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.samplers.AbstractSampler;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testbeans.TestBean;
+import org.apache.jmeter.testbeans.TestBeanHelper;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.*;
 import org.jpos.iso.*;
@@ -17,6 +16,10 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/* Sends an ISOMsg to a jPOS QMUX provided by an ISO8583Config element and receives a response.
+ * Message fields can be specified in the associated TestBean GUI, or via ISO8583Template config elements
+ * in scope. Preprocessors may also modify fields.
+ */
 public class ISO8583Sampler extends AbstractSampler
         implements ISO8583TestElement, TestBean, Serializable {
 
@@ -33,13 +36,18 @@ public class ISO8583Sampler extends AbstractSampler
         RCFIELD = "responseCodeField",
         RCSUCCESS = "successResponseCode";
 
+    // These can't be TestElementProperties as they would be saved in the Test Plan:
     protected ISO8583Config config = new ISO8583Config();
-    protected transient MessageBuilder builder;
-    protected transient ISOMsg response;
+    protected ISO8583Template template = new ISO8583Template();
+
+    protected transient MessageBuilder builder; // reusable between samples (with same packager)
+    protected transient ISOMsg response; // for PostProcessors
+
+    private transient boolean fieldsSet = false; // indicates if the fields have been set yet to avoid duplication
 
     @Override
     public boolean applies(ConfigTestElement configElement) {
-        return configElement instanceof ISO8583Config;
+        return configElement instanceof ISO8583TestElement;
     }
 
     @Override
@@ -50,7 +58,41 @@ public class ISO8583Sampler extends AbstractSampler
             config.addConfigElement((ISO8583Config) el);
             // Make sure all messages have a packager available (to interpret String values correctly):
             builder = new MessageBuilder(config.createPackager());
+        } else if (el instanceof ISO8583Template) {
+            log.debug("Applying template '{}'", el.getName());
+            // Add (new) message fields from any ISO8583Template elements in scope to this sampler's fields:
+            template.merge((ISO8583Template) el);
+        } else {
+            super.addTestElement(el);
         }
+    }
+
+    // Without preparing the sampler before Preprocessors run they wouldn't see the
+    // sampler's own template fields.
+    // This gets called first thing in TestCompiler.configureWithConfigElements,
+    // so we can sneak in the sampler's own fields to be applied (as a pseudo-config element)
+    // before the surrounding ISO8583Template elements.
+    @Override
+    public void clearTestElementChildren() {
+        TestBeanHelper.prepare(this);
+        fieldsSet = true; // avoid setting fields again after Preprocessors (or their modifications may be overwritten)
+    }
+
+    // Sampler has to keep track of running vs. non-running versions for non-JMeterProperty members,
+    // or else any modifications (by Preprocessors) would accumulate with each iteration.
+    @Override
+    public void setRunningVersion(boolean runningVersion) {
+        super.setRunningVersion(runningVersion);
+        config.setRunningVersion(runningVersion);
+        template.setRunningVersion(runningVersion);
+    }
+
+    @Override
+    public void recoverRunningVersion() {
+        super.recoverRunningVersion();
+        config.recoverRunningVersion();
+        template.recoverRunningVersion();
+        fieldsSet = false; // make sure fields get re-applied next time the sampler gets prepared
     }
 
     @Override
@@ -83,8 +125,7 @@ public class ISO8583Sampler extends AbstractSampler
             log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
             result.setSentBytes((long) bytes.length);
         } catch (Exception e) {
-            // must be config error, e.g. Channel not running, so would have been thrown on sending above
-            log.warn("Packager error on request. Check config! {}", e.toString(), e);
+            log.error("Packager error on request '{}'. Check config! {}", getName(), e.toString());
         }
 
         // Response validation...
@@ -115,7 +156,7 @@ public class ISO8583Sampler extends AbstractSampler
             result.setBytes((long) bytes.length);
             result.setBodySize((long) bytes.length);
         } catch (ISOException e) {
-            log.warn("Packager error on response. Check config! {}", e.toString(), e);
+            log.error("Packager error on response '{}'. Check config! {}", getName(), e.toString());
         }
         return result;
     }
@@ -132,71 +173,22 @@ public class ISO8583Sampler extends AbstractSampler
         } catch (ISOException e) {
             log.error("Fields incorrect - {}", e.toString());
         }
-        return builder.getMessage();
+        return builder.header(getHeader()).trailer(getTrailer()).getMessage();
     }
 
-    public ISOMsg getResponse() {
-        return response;
-    }
+    public ISOMsg getResponse() { return response; }
 
-    public void addField(String id, String value) {
-        addField(id, value, "");
-    }
-
-    public void addField(String id, String value, String tag) {
-        addField(new MessageField(id, value, tag));
-    }
-
-    protected void addField(MessageField field) {
-        log.debug("Add field {}", field);
-        CollectionProperty fields = (CollectionProperty)getProperty(FIELDS);
-        JMeterProperty prop = AbstractProperty.createProperty(field);
-        if (isRunningVersion()) {
-            this.setTemporary(prop);
-        }
-        fields.addItem(prop);
-        try {
-            builder.extend(Arrays.asList(field));
-        } catch (ISOException e) {
-            log.error("Field incorrect - {}", e.toString());
-        }
-    }
-
-    protected void addFields(Collection<MessageField> fields) {
-        fields.forEach(f -> addField(f));
-    }
+    public void addField(String id, String value) { addField(id, value, ""); }
+    public void addField(String id, String value, String tag) { template.addField(new MessageField(id, value, tag)); }
 
     public String getHeader() { return getPropertyAsString(HEADER); }
-    public void setHeader(String header) {
-        setProperty(HEADER, header);
-        builder.header(header);
-    }
+    public void setHeader(String header) { setProperty(HEADER, header); }
 
     public String getTrailer() { return getPropertyAsString(TRAILER); }
-    public void setTrailer(String trailer) {
-        setProperty(TRAILER, trailer);
-        builder.header(trailer);
-    }
+    public void setTrailer(String trailer) { setProperty(TRAILER, trailer); }
 
-    // Need Collection getter/setter for TestBean GUI
-    public Collection<MessageField> getFields() {
-        Collection<MessageField> fields = new ArrayList<>();
-        JMeterProperty cfg = getProperty(FIELDS);
-        if (cfg instanceof CollectionProperty) {
-            ((CollectionProperty)cfg).iterator()
-                .forEachRemaining(p -> fields.add((MessageField) p.getObjectValue()));
-        }
-        return fields;
-    }
-
-    public void setFields(Collection<MessageField> fields) {
-        setProperty(new CollectionProperty(FIELDS, fields));
-        try {
-            builder.define(fields);
-        } catch (ISOException e) {
-            log.error("Fields incorrect - {}", e);
-        }
-    }
+    public Collection<MessageField> getFields() { return template.getFields(); }
+    public void setFields(Collection<MessageField> fields) { if (!fieldsSet) template.setFields(fields); }
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
     public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }
@@ -206,5 +198,4 @@ public class ISO8583Sampler extends AbstractSampler
 
     public String getSuccessResponseCode() { return getPropertyAsString(RCSUCCESS); }
     public void setSuccessResponseCode(String successResponseCode) { setProperty(RCSUCCESS, successResponseCode); }
-
 }

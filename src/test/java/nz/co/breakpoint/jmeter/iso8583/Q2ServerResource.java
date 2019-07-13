@@ -12,7 +12,7 @@ public class Q2ServerResource extends ExternalResource {
 
     protected void before() {
         q2.start();
-        assert q2.ready(2000); // give it 2 seconds to start up
+        assert q2.ready(5000); // give it 5 seconds to start up
     }
 
     protected void after() {

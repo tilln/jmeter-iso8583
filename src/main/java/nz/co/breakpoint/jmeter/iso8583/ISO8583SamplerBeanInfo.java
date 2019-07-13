@@ -1,7 +1,6 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import org.apache.jmeter.testbeans.gui.IntegerPropertyEditor;
-import org.apache.jmeter.testbeans.gui.TableEditor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Sampler.*;
 import java.beans.PropertyDescriptor;
 
@@ -25,14 +24,7 @@ public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
-        p = property(FIELDS);
-        p.setPropertyEditorClass(TableEditor.class);
-        p.setValue(TableEditor.CLASSNAME, MessageField.class.getName());
-        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(FIELDS+".tableHeaders",
-            new String[]{"Field", "Content", "Tag", "Comment"}));
-        p.setValue(TableEditor.OBJECT_PROPERTIES,
-            // name and comment are standard TestElement members:
-            new String[]{"name", MessageField.CONTENT, MessageField.TAG, "comment"});
+        createMessageFieldsTableProperty(FIELDS);
 
         createPropertyGroup("Response", new String[]{
             TIMEOUT, RCFIELD, RCSUCCESS,

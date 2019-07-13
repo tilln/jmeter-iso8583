@@ -30,10 +30,10 @@
       name="RESPONSE CODE"
       class="org.jpos.iso.IF_CHAR"/>
   <isofield
-          id="41"
-          length="8"
-          name="CARD ACCEPTOR TERMINAL IDENTIFICACION"
-          class="org.jpos.iso.IF_CHAR"/>
+      id="41"
+      length="8"
+      name="CARD ACCEPTOR TERMINAL IDENTIFICACION"
+      class="org.jpos.iso.IF_CHAR"/>
 
   <isofieldpackager id="43"
       name="CARD ACCEPTOR LOCATION"
@@ -41,12 +41,8 @@
       class="org.jpos.iso.IFB_BINARY"
       packager="org.jpos.iso.packager.GenericSubFieldPackager"
       emitBitmap="false"
+      firstField="1"
       maxValidField="3">
-    <isofield id="0"
-        name="NOT PRESENT"
-        length="0"
-        pad="false"
-        class="org.jpos.iso.IF_NOP"/>
     <isofield id="1"
         name="NAME"
         length="25"
@@ -67,8 +63,35 @@
   <isofieldpackager
       id="48"
       length="40"
-      name="Additional Data"
-      class="org.jpos.iso.IFA_LLLBINARY"
+      name="ADDITIONAL DATA"
+      class="org.jpos.iso.IFA_LLLCHAR"
+      token="00000"
+      packager="org.jpos.tlv.packager.TaggedSequencePackager">
+    <isofield
+        id="1"
+        length="99"
+        token="####"
+        name="Default Tag Packager"
+        class="org.jpos.tlv.packager.IFTA_LLLBINARY"/>
+    <isofield
+        id="2"
+        length="99"
+        token="a2"
+        name="Cardholder Transaction Date and Time"
+        class="org.jpos.tlv.packager.IFTA_LLNUM"/>
+    <isofield
+        id="3"
+        length="99"
+        token="a1"
+        name="Settlement Indicator"
+        class="org.jpos.tlv.packager.IFTA_LLLCHAR"/>
+  </isofieldpackager>
+
+  <isofieldpackager
+      id="55"
+      length="40"
+      name="ICC DATA"
+      class="org.jpos.iso.IFB_LLLHBINARY"
       emitBitmap="false"
       packager="org.jpos.tlv.packager.bertlv.BERTLVBinaryPackager"/>
 

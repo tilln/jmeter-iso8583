@@ -6,7 +6,7 @@ import org.jpos.iso.ISOMsg;
 import org.junit.*;
 import static org.junit.Assert.*;
 
-public class ISO8583SamplerIT extends ISO8583TestBase {
+public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
     @ClassRule
     public static Q2ServerResource q2server = new Q2ServerResource();
 
@@ -26,14 +26,17 @@ public class ISO8583SamplerIT extends ISO8583TestBase {
     @Test
     public void shouldReceiveResponse() {
         instance.addTestElement(config);
-        ISOMsg msg = getTestMessage();
+        instance.addTestElement(getDefaultTestTemplate());
+        ISOMsg msg = getDefaultTestMessage();
         instance.setFields(asMessageFields(msg));
-        instance.setTimeout(2000);
+        instance.addField("48.1", "1122334455667788", "9f26");
+        instance.setTimeout(5000);
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);
         assertFalse(res.getResponseDataAsString().isEmpty());
-        ISOMsg response = xmlToIsoMsg(res.getResponseDataAsString());
+        ISOMsg response = instance.getResponse();
         assertEquals(msg.getString(11), response.getString(11));
+        assertEquals("1122334455667788", response.getString("48.1"));
     }
 
 }

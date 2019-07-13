@@ -15,12 +15,11 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
     public void setup() {
         instance = getDefaultTestConfig();
         instance.startQ2();
-        assert instance.q2.ready(2000);
     }
 
     @After
     public void teardown() {
-        instance.q2.stop();
+        instance.stopQ2();
     }
 
     @Test
@@ -50,6 +49,8 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
         assertNotNull(NameRegistrar.getIfExists("jmeter-server"));
         assertNotNull(NameRegistrar.getIfExists("server.jmeter-server"));
         assertTrue(qserver.running());
+        instance.stopQServer();
+        assertFalse(qserver.running());
     }
 
     @Test
@@ -59,5 +60,7 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
         assertEquals("jmeter-mux", mux.getName());
         assertNotNull(NameRegistrar.getIfExists("mux.jmeter-mux"));
         assertTrue(mux.running());
+        instance.stopMux();
+        assertFalse(mux.running());
     }
 }

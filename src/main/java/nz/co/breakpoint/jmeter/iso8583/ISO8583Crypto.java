@@ -3,19 +3,22 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.io.Serializable;
 import java.security.Key;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.jmeter.processor.PreProcessor;
 import org.apache.jmeter.samplers.Sampler;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.threads.JMeterContext;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jpos.iso.ISOBasePackager;
-import org.jpos.iso.ISOException;
-import org.jpos.iso.ISOMsg;
-import org.jpos.iso.ISOUtil;
-import org.jpos.security.jceadapter.JCEHandler;
+import org.jpos.emv.EMVStandardTagType;
+import static org.jpos.emv.EMVStandardTagType.*;
+import org.jpos.emv.UnknownTagNumberException;
+import org.jpos.iso.*;
+import org.jpos.security.MKDMethod;
+import org.jpos.security.SKDMethod;
 import org.jpos.security.jceadapter.JCEHandlerException;
+import org.jpos.tlv.ISOTaggedField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,18 +33,37 @@ public class ISO8583Crypto extends AbstractTestElement
         MACALGORITHM = "macAlgorithm",
         MACKEY = "macKey",
         PINFIELD = "pinField",
-        PINKEY = "pinKey";
+        PINKEY = "pinKey",
+        ARQCFIELD = "arqcField",
+        IMKAC = "imkac",
+        SKDM = "skdm";
 
-    protected transient JCEHandler jceHandler;
-    protected transient Key macKey, pinKey;
-
-    public ISO8583Crypto() {
-        try {
-            jceHandler = new JCEHandler(BouncyCastleProvider.class.getName());
-        } catch (JCEHandlerException e) {
-            log.error("Failed to create JCEHandler", e);
-        }
+    static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
+    static final String[] skdMethods;
+    static {
+        SKDMethod[] all = SKDMethod.values();
+        skdMethods = new String[all.length];
+        for (int i=0; i<all.length; ++i) skdMethods[i] = all[i].name();
     }
+
+    // TODO configurable via JMeter property
+    //  "jmeter.iso8583.arqcInputTags"="9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
+    static final EMVStandardTagType[] minimumArqcInputs = new EMVStandardTagType[]{
+        AMOUNT_AUTHORISED_NUMERIC_0x9F02,
+        AMOUNT_OTHER_NUMERIC_0x9F03,
+        TERMINAL_COUNTRY_CODE_0x9F1A,
+        TERMINAL_VERIFICATION_RESULTS_0x95,
+        TRANSACTION_CURRENCY_CODE_0x5F2A,
+        TRANSACTION_DATE_0x9A,
+        TRANSACTION_TYPE_0x9C,
+        UNPREDICTABLE_NUMBER_0x9F37,
+        APPLICATION_INTERCHANGE_PROFILE_0x82,
+        APPLICATION_TRANSACTION_COUNTER_0x9F36,
+        ISSUER_APPLICATION_DATA_0x9F10
+    };
+
+    protected transient SecurityModule securityModule = new SecurityModule();
+    protected transient Key macKey, pinKey;
 
     @Override
     public void process() {
@@ -52,13 +74,12 @@ public class ISO8583Crypto extends AbstractTestElement
         log.debug("Processing sampler '{}'", current.getName());
         ISO8583Sampler sampler = (ISO8583Sampler)current;
 
-        if (jceHandler == null) {
-            log.warn("JCEHandler undefined"); // should have logged error earlier
+        if (securityModule == null) {
+            log.warn("SecurityModule undefined"); // should have logged error earlier
             return;
         }
-        // TODO how to represent inputs for key derivation (DUKPT etc)
         encryptPINBlock(sampler);
-        calculateARQC(sampler); // TODO how to represent inputs for ARQC
+        calculateARQC(sampler);
         calculateMAC(sampler);
     }
 
@@ -98,9 +119,9 @@ public class ISO8583Crypto extends AbstractTestElement
         try {
             byte[] packedMsg = msg.pack();
             // cut off MAC bytes and don't include them in calculation:
-            byte[] mac = jceHandler.generateMAC(Arrays.copyOf(packedMsg, packedMsg.length-macLength),
-                    macKey, macAlgorithm);
-            sampler.addField(String.valueOf(macField), ISOUtil.padright(ISOUtil.byte2hex(mac), 2*macLength, 'f'));
+            String mac = securityModule.generateMAC(Arrays.copyOf(packedMsg, packedMsg.length-macLength),
+                macKey, macAlgorithm);
+            sampler.addField(String.valueOf(macField), ISOUtil.padright(mac, 2*macLength, 'f'));
         } catch (ISOException e) {
             log.error("MAC calculation failed {}", e.toString(), e);
         }
@@ -135,15 +156,71 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         try {
-            byte[] encryptedPinBlock = jceHandler.encryptData(msg.getBytes(pinField), pinKey);
-            sampler.addField(pinField, ISOUtil.byte2hex(encryptedPinBlock));
+            sampler.addField(pinField, securityModule.encryptPINBlock(msg.getBytes(pinField), pinKey));
         } catch (JCEHandlerException e) {
             log.error("PIN Block encryption failed {}", e.toString(), e);
         }
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
-        // TODO
+        final String hexKey = getImkac(), fieldNo = getArqcField(), skdm = getSkdm();
+
+        if (fieldNo == null || fieldNo.isEmpty()) {
+            log.debug("No ARQC field defined, skipping ARQC calculation");
+            return;
+        }
+        if (hexKey == null || hexKey.isEmpty()) {
+            log.debug("No IMKAC defined, skipping ARQC calculation");
+            return;
+        }
+        if (skdm == null || skdm.isEmpty()) {
+            log.debug("No SKDM defined, skipping ARQC calculation");
+            return;
+        }
+        if (hexKey.length() != 32) {
+            log.error("Incorrect IMKAC length '{}' (expecting 32 hex digits)", hexKey);
+            return;
+        }
+        ISOMsg msg = sampler.getRequest();
+        Map<EMVStandardTagType, String> emvData = new HashMap<>();
+        try {
+            // TODO maybe specify parent field as input, and additional inputData separately?
+            String parentField = fieldNo.replaceAll("(.*)\\.[0-9]*", "$1");
+            ISOComponent parent = msg.getComponent(parentField);
+            if (parent != null) {
+                for (Object c : parent.getChildren().values()) {
+                    if (c instanceof ISOTaggedField) {
+                        ISOTaggedField f = (ISOTaggedField) c;
+                        if (f.getBytes() != null && f.getBytes().length > 0) {
+                            try {
+                                emvData.put(EMVStandardTagType.forHexCode(f.getTag()), ISOUtil.byte2hex(f.getBytes()));
+                            } catch (UnknownTagNumberException e) {
+                                log.warn("Unknown tag found in ARQC input fields {}", f.getTag(), e.toString());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (ISOException e) {
+            log.error("ARQC calculation failed {}", e.toString(), e);
+            return;
+        }
+        StringBuffer transactionData = new StringBuffer();
+        for (EMVStandardTagType tag : minimumArqcInputs) {
+            transactionData.append(emvData.getOrDefault(tag, ""));
+        }
+        // Append any additional data already present in the input field (as hex string):
+        transactionData.append(msg.getString(fieldNo));
+
+        String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
+            SKDMethod.valueOf(getSkdm()), hexKey,
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A, ""),
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34, ""),
+            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36, ""),
+            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37, ""),
+            transactionData.toString());
+
+        sampler.addField(fieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
     }
 
     public String getMacAlgorithm() { return getPropertyAsString(MACALGORITHM); }
@@ -157,4 +234,14 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getPinField() { return getPropertyAsString(PINFIELD); }
     public void setPinField(String pinField) { setProperty(PINFIELD, pinField); }
+
+    public String getArqcField() { return getPropertyAsString(ARQCFIELD); }
+    public void setArqcField(String arqcField) { setProperty(ARQCFIELD, arqcField); }
+
+    public String getImkac() { return getPropertyAsString(IMKAC); }
+    public void setImkac(String imkac) { setProperty(IMKAC, imkac); }
+
+    public String getSkdm() { return getPropertyAsString(SKDM); }
+    public void setSkdm(String skdm) { setProperty(SKDM, skdm); }
+
 }

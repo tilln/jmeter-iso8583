@@ -122,7 +122,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
         assertEquals("1234567890ABCDEF", msg.getString("55.2"));
         assertTrue(msg.getComponent("55.2") instanceof ISOTaggedField);
         assertEquals("9f26", ((ISOTaggedField)msg.getComponent("55.2")).getTag());
-        assertEquals("3030303030303030303030303032303000109a031911199f26081234567890abcdef", ISOUtil.byte2hex(msg.pack()));
+        assertEquals("30303030303030303030303030323030109a031911199f26081234567890abcdef", ISOUtil.byte2hex(msg.pack()));
     }
 
     @Test

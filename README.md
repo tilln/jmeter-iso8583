@@ -16,7 +16,8 @@ Overview
 * [commons-cli / commons-cli](https://search.maven.org/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)
 * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.24/snakeyaml-1.24.jar)
 * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.11/HdrHistogram-2.1.11.jar)
-    
+* [org.javatuples / javatuples](https://search.maven.org/remotecontent?filepath=org/javatuples/javatuples/1.2/javatuples-1.2.jar)
+
 ### Limitations
 
 Some exceptions are currently only logged in the Q2 log but not in the JMeter log:

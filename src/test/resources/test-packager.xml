@@ -89,9 +89,9 @@
 
   <isofieldpackager
       id="55"
-      length="40"
+      length="255"
       name="ICC DATA"
-      class="org.jpos.iso.IFB_LLLHBINARY"
+      class="org.jpos.iso.IFB_LLHBINARY"
       emitBitmap="false"
       packager="org.jpos.tlv.packager.bertlv.BERTLVBinaryPackager"/>
 

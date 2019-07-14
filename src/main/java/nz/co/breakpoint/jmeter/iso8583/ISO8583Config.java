@@ -77,7 +77,6 @@ public class ISO8583Config extends ConfigTestElement
     // For GUI...
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
-    static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
 
     protected static transient Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:

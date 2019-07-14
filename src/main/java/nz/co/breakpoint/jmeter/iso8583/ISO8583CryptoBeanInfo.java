@@ -28,10 +28,28 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p = property(MACALGORITHM);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
-        p.setValue(TAGS, ISO8583Config.macAlgorithms);
+        p.setValue(TAGS, macAlgorithms);
 
         p = property(MACKEY);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        createPropertyGroup("ARQC", new String[]{
+            ARQCFIELD, IMKAC, SKDM,
+        });
+
+        p = property(ARQCFIELD);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(IMKAC);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(SKDM);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+        p.setValue(TAGS, skdMethods);
+
     }
 }

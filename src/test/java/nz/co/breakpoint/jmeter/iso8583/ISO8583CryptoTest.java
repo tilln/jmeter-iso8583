@@ -1,8 +1,11 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
+import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.junit.Before;
 import org.junit.Test;
+
+import static nz.co.breakpoint.jmeter.iso8583.ISO8583Crypto.skdMethods;
 import static org.junit.Assert.*;
 
 public class ISO8583CryptoTest extends ISO8583TestBase {
@@ -93,5 +96,22 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         msg = sampler.getRequest();
         assertTrue(msg.hasField(192));
         assertEquals(192, msg.getMaxField());
+    }
+
+    @Test
+    public void shouldCalculateARQC() throws ISOException {
+        String arqcInput = "TODO";
+        sampler.addField("55.1", arqcInput, "9f26");
+        sampler.addField("55.2", "01", "9f36");
+        sampler.addField("55.3", "11223344", "9f37");
+
+        instance.setImkac(DEFAULT_3DES_KEY);
+        instance.setSkdm(skdMethods[0]);
+        instance.setArqcField("55.1");
+        instance.process();
+
+        ISOMsg msg = sampler.getRequest();
+        assertTrue(msg.hasField("55.1"));
+        assertTrue(msg.getString("55.1").matches("[0-9A-F]{16}"));
     }
 }

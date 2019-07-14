@@ -44,13 +44,15 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
         instance.addField("11", "ALREADY_THERE");
 
         ISO8583Template inner = new ISO8583Template();
-        inner.addField(new MessageField("0", "0000"));
-        inner.addField(new MessageField("41", "THIS"));
-
+        inner.setFields(asMessageFields(
+            new MessageField("0", "0000"),
+            new MessageField("41", "THIS")
+        ));
         ISO8583Template outer = new ISO8583Template();
-        outer.addField(new MessageField("11", "IGNORED"));
-        outer.addField(new MessageField("41", "NOT_THIS"));
-
+        outer.setFields(asMessageFields(
+            new MessageField("11", "IGNORED"),
+            new MessageField("41", "NOT_THIS")
+        ));
         instance.addTestElement(inner);
         instance.addTestElement(outer);
 

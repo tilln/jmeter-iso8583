@@ -78,6 +78,12 @@ public class ISO8583TestBase {
         return fields;
     }
 
+    public static Collection<MessageField> asMessageFields(MessageField... fields) {
+        Collection<MessageField> collection = new ArrayList<>();
+        for (MessageField f : fields) collection.add(f);
+        return collection;
+    }
+
     public ISOMsg getDefaultTestMessage() {
         ISOMsg msg = new ISOMsg("0800");
         msg.set(11, "012345");

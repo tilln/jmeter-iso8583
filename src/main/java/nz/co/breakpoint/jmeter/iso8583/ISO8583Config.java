@@ -186,7 +186,7 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
             .addContent(new Element("reconnect-delay").addContent(
-                JMeterUtils.getPropDefault("jmeter.iso8583.channelReconnectDelay", "10000")))
+                JMeterUtils.getPropDefault(CHANNEL_RECONNECT_DELAY, "10000")))
             .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
 
         ChannelAdaptor channelAdaptor = (ChannelAdaptor) deployAndStart(descriptor);
@@ -296,7 +296,7 @@ public class ISO8583Config extends ConfigTestElement
         q2 = Q2.getQ2();
         if (q2 == null) {
             log.debug("Creating Q2");
-            q2 = new Q2(JMeterUtils.getPropDefault("jmeter.iso8583.q2DeployDir", Q2.DEFAULT_DEPLOY_DIR));
+            q2 = new Q2(JMeterUtils.getPropDefault(Q2_DEPLOY_DIR, Q2.DEFAULT_DEPLOY_DIR));
             if (!log.isDebugEnabled()) {
                 q2.getLog().setLogger(null); // quieten it TODO redirect QBean exceptions to JMeter logger
             }
@@ -307,7 +307,7 @@ public class ISO8583Config extends ConfigTestElement
             log.info("Starting Q2");
             q2.start();
             log.debug("Started Q2");
-            boolean ready = q2.ready(JMeterUtils.getPropDefault("jmeter.iso8583.q2StartupTimeout", 2000));
+            boolean ready = q2.ready(JMeterUtils.getPropDefault(Q2_STARTUP_TIMEOUT, 2000));
             log.debug("Q2 ready: {}", ready);
             if (!ready) {
                 log.error("Failed to start up Q2");
@@ -344,7 +344,7 @@ public class ISO8583Config extends ConfigTestElement
             QServer qserver = startQServer();
             if (qserver == null) return;
 
-            long waitTime = JMeterUtils.getPropDefault("jmeter.iso8583.incomingConnectionTimeout", 60000);
+            long waitTime = JMeterUtils.getPropDefault(INCOMING_CONNECTION_TIMEOUT, 60000);
             long abortTime = System.currentTimeMillis()+waitTime;
             for (; waitTime > 0; waitTime = abortTime - System.currentTimeMillis()) {
                 log.info("Waiting {} seconds for incoming client connection", waitTime/1000);

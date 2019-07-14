@@ -11,9 +11,8 @@ import org.apache.jmeter.samplers.Sampler;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.threads.JMeterContext;
-import org.jpos.emv.EMVStandardTagType;
+import org.apache.jmeter.util.JMeterUtils;
 import static org.jpos.emv.EMVStandardTagType.*;
-import org.jpos.emv.UnknownTagNumberException;
 import org.jpos.iso.*;
 import org.jpos.security.MKDMethod;
 import org.jpos.security.SKDMethod;
@@ -45,22 +44,6 @@ public class ISO8583Crypto extends AbstractTestElement
         skdMethods = new String[all.length];
         for (int i=0; i<all.length; ++i) skdMethods[i] = all[i].name();
     }
-
-    // TODO configurable via JMeter property
-    //  "jmeter.iso8583.arqcInputTags"="9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-    static final EMVStandardTagType[] minimumArqcInputs = new EMVStandardTagType[]{
-        AMOUNT_AUTHORISED_NUMERIC_0x9F02,
-        AMOUNT_OTHER_NUMERIC_0x9F03,
-        TERMINAL_COUNTRY_CODE_0x9F1A,
-        TERMINAL_VERIFICATION_RESULTS_0x95,
-        TRANSACTION_CURRENCY_CODE_0x5F2A,
-        TRANSACTION_DATE_0x9A,
-        TRANSACTION_TYPE_0x9C,
-        UNPREDICTABLE_NUMBER_0x9F37,
-        APPLICATION_INTERCHANGE_PROFILE_0x82,
-        APPLICATION_TRANSACTION_COUNTER_0x9F36,
-        ISSUER_APPLICATION_DATA_0x9F10
-    };
 
     protected transient SecurityModule securityModule = new SecurityModule();
     protected transient Key macKey, pinKey;
@@ -182,7 +165,7 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         ISOMsg msg = sampler.getRequest();
-        Map<EMVStandardTagType, String> emvData = new HashMap<>();
+        Map<String, String> emvData = new HashMap<>();
         try {
             // TODO maybe specify parent field as input, and additional inputData separately?
             String parentField = fieldNo.replaceAll("(.*)\\.[0-9]*", "$1");
@@ -192,11 +175,7 @@ public class ISO8583Crypto extends AbstractTestElement
                     if (c instanceof ISOTaggedField) {
                         ISOTaggedField f = (ISOTaggedField) c;
                         if (f.getBytes() != null && f.getBytes().length > 0) {
-                            try {
-                                emvData.put(EMVStandardTagType.forHexCode(f.getTag()), ISOUtil.byte2hex(f.getBytes()));
-                            } catch (UnknownTagNumberException e) {
-                                log.warn("Unknown tag found in ARQC input fields {}", f.getTag(), e.toString());
-                            }
+                            emvData.put(f.getTag(), ISOUtil.byte2hex(f.getBytes()));
                         }
                     }
                 }
@@ -206,7 +185,11 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         StringBuffer transactionData = new StringBuffer();
-        for (EMVStandardTagType tag : minimumArqcInputs) {
+        String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
+            "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
+        ).split("[,;: ]");
+
+        for (String tag : arqcInputTags) {
             transactionData.append(emvData.getOrDefault(tag, ""));
         }
         // Append any additional data already present in the input field (as hex string):
@@ -214,10 +197,10 @@ public class ISO8583Crypto extends AbstractTestElement
 
         String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
             SKDMethod.valueOf(getSkdm()), hexKey,
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A, ""),
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34, ""),
-            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36, ""),
-            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37, ""),
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), ""),
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), ""),
+            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
+            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
             transactionData.toString());
 
         sampler.addField(fieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());

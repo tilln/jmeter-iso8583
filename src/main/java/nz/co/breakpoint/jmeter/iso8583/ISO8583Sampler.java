@@ -168,6 +168,10 @@ public class ISO8583Sampler extends AbstractSampler
 
     // For programmatic access from Pre-/PostProcessors...
     public ISOMsg getRequest() {
+        if (builder == null) { // TODO better exception handling
+            log.warn("Invalid/missing ISO8583 Config for '{}'", getName());
+            return new ISOMsg();
+        }
         try {
             builder.define(getFields());
         } catch (ISOException e) {

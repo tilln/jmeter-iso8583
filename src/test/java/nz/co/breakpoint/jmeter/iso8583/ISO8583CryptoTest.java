@@ -101,20 +101,19 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
 
     @Test
     public void shouldCalculateARQC() throws ISOException {
-        String arqcInput = "TODO";
         sampler.setFields(asMessageFields(
-            new MessageField("55.1", arqcInput, "9f26"),
+            new MessageField("55.1", "ABCD", "9f1e"),
             new MessageField("55.2", "01", "9f36"),
             new MessageField("55.3", "11223344", "9f37")
         ));
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setSkdm(skdMethods[0]);
-        instance.setArqcField("55.1");
+        instance.setIccField("55");
         instance.process();
 
         ISOMsg msg = sampler.getRequest();
-        assertTrue(msg.hasField("55.1"));
-        assertTrue(msg.getString("55.1").matches("[0-9A-F]{16}"));
+        assertTrue(msg.hasField("55.4"));
+        assertTrue(msg.getString("55.4").matches("[0-9A-F]{16}"));
     }
 
     @Test
@@ -122,52 +121,48 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         JMeterUtils.setProperty(ARQC_INPUT_TAGS, "9f37");
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setSkdm(skdMethods[0]);
-        instance.setArqcField("55.1");
+        instance.setIccField("55");
 
         sampler.setFields(asMessageFields(
-            new MessageField("55.1", "", "9f26"),
+            new MessageField("55.1", "ABCD", "9f1e"),
             new MessageField("55.2", "01", "9f36"), // should be excluded from calculation
             new MessageField("55.3", "11223344", "9f37")
         ));
         instance.process();
 
-        String arqc = sampler.getRequest().getString("55.1");
+        String arqc = sampler.getRequest().getString("55.4");
+        assertNotNull(arqc);
 
         sampler.setFields(asMessageFields(
-            new MessageField("55.1", "", "9f26"),
+            new MessageField("55.1", "ABCD", "9f1e"),
             new MessageField("55.2", "99", "9f36"), // should not change the previous arqc
             new MessageField("55.3", "11223344", "9f37")
         ));
         instance.process();
 
-        assertEquals(arqc, sampler.getRequest().getString("55.1"));
+        assertEquals(arqc, sampler.getRequest().getString("55.4"));
     }
 
     @Test
     public void shouldAppendAdditionalARQCInputTags() throws ISOException {
+        sampler.setFields(asMessageFields(
+                new MessageField("55.1", "ABCD", "9f1e"),
+                new MessageField("55.2", "01", "9f36"),
+                new MessageField("55.3", "11223344", "9f37")
+        ));
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setSkdm(skdMethods[0]);
-        instance.setArqcField("55.1");
+        instance.setIccField("55");
 
-        sampler.setFields(asMessageFields(
-            new MessageField("55.1", "ADDITIONAL", "9f26"), // should be included in calculation
-            new MessageField("55.2", "01", "9f36"),
-            new MessageField("55.3", "11223344", "9f37")
-        ));
+        instance.setTxnData("ADDITIONAL");
         instance.process();
 
-        String arqc = sampler.getRequest().getString("55.1");
-
-        sampler.setFields(asMessageFields(
-            new MessageField("55.1", "DIFFERENT", "9f26"), // should result in a different arqc
-            new MessageField("55.2", "01", "9f36"),
-            new MessageField("55.3", "11223344", "9f37")
-        ));
+        instance.setTxnData("DIFFERENT");// should result in a different arqc
         instance.process();
 
         ISOMsg msg = sampler.getRequest();
-        assertNotEquals("ADDITIONAL", arqc);
-        assertNotEquals("DIFFERENT", msg.getString("55.1"));
-        assertNotEquals(arqc, msg.getString("55.1"));
+        assertTrue(msg.hasField("55.4"));
+        assertTrue(msg.hasField("55.5"));
+        assertNotEquals(msg.getString("55.4"), msg.getString("55.5"));
     }
 }

@@ -33,9 +33,12 @@ public class ISO8583Crypto extends AbstractTestElement
         MACKEY = "macKey",
         PINFIELD = "pinField",
         PINKEY = "pinKey",
-        ARQCFIELD = "arqcField",
+        ICCFIELD = "iccField",
         IMKAC = "imkac",
-        SKDM = "skdm";
+        SKDM = "skdm",
+        PAN = "pan",
+        PSN = "psn",
+        TXNDATA = "txnData";
 
     static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
     static final String[] skdMethods;
@@ -146,9 +149,10 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
-        final String hexKey = getImkac(), fieldNo = getArqcField(), skdm = getSkdm();
+        final String hexKey = getImkac(), fieldNo = getIccField(), skdm = getSkdm();
+        final ISOMsg msg = sampler.getRequest();
 
-        if (fieldNo == null || fieldNo.isEmpty()) {
+        if (fieldNo == null || fieldNo.isEmpty() || !msg.hasField(fieldNo)) {
             log.debug("No ARQC field defined, skipping ARQC calculation");
             return;
         }
@@ -164,46 +168,46 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Incorrect IMKAC length '{}' (expecting 32 hex digits)", hexKey);
             return;
         }
-        ISOMsg msg = sampler.getRequest();
-        Map<String, String> emvData = new HashMap<>();
         try {
-            // TODO maybe specify parent field as input, and additional inputData separately?
-            String parentField = fieldNo.replaceAll("(.*)\\.[0-9]*", "$1");
-            ISOComponent parent = msg.getComponent(parentField);
-            if (parent != null) {
-                for (Object c : parent.getChildren().values()) {
-                    if (c instanceof ISOTaggedField) {
-                        ISOTaggedField f = (ISOTaggedField) c;
-                        if (f.getBytes() != null && f.getBytes().length > 0) {
-                            emvData.put(f.getTag(), ISOUtil.byte2hex(f.getBytes()));
-                        }
-                    }
+            final Map<String, String> emvData = new HashMap<>();
+            final ISOComponent emvField = msg.getComponent(fieldNo);
+            final String arqcFieldNo = String.format("%s.%d", fieldNo, emvField.getMaxField()+1);
+
+            for (Object c : emvField.getChildren().values()) {
+                if (c instanceof ISOTaggedField) {
+                    ISOTaggedField f = (ISOTaggedField) c;
+                    if (f.getValue() instanceof String)
+                        emvData.put(f.getTag(), (String)f.getValue());
+                    else if (f.getBytes() != null && f.getBytes().length != 0)
+                        emvData.put(f.getTag(), ISOUtil.byte2hex(f.getBytes()));
+                } else {
+                    log.debug("Ignoring non-tagged field {}", c);
                 }
             }
+            final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
+                "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
+            ).split("[,;:. ]");
+
+            final StringBuffer transactionData = new StringBuffer();
+            for (String tag : arqcInputTags) {
+                transactionData.append(emvData.getOrDefault(tag, ""));
+            }
+            transactionData.append(getTxnData()); // additional transaction data (as hex string)
+            log.debug("ARQC input bytes '{}'", transactionData);
+
+            final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
+                SKDMethod.valueOf(getSkdm()), hexKey,
+                emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), getPan()),
+                emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), getPsn()),
+                emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
+                emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
+                transactionData.toString());
+
+            sampler.addField(arqcFieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
         } catch (ISOException e) {
             log.error("ARQC calculation failed {}", e.toString(), e);
             return;
         }
-        StringBuffer transactionData = new StringBuffer();
-        String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
-            "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-        ).split("[,;: ]");
-
-        for (String tag : arqcInputTags) {
-            transactionData.append(emvData.getOrDefault(tag, ""));
-        }
-        // Append any additional data already present in the input field (as hex string):
-        transactionData.append(msg.getString(fieldNo));
-
-        String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
-            SKDMethod.valueOf(getSkdm()), hexKey,
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), ""),
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), ""),
-            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
-            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
-            transactionData.toString());
-
-        sampler.addField(fieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
     }
 
     public String getMacAlgorithm() { return getPropertyAsString(MACALGORITHM); }
@@ -218,8 +222,8 @@ public class ISO8583Crypto extends AbstractTestElement
     public String getPinField() { return getPropertyAsString(PINFIELD); }
     public void setPinField(String pinField) { setProperty(PINFIELD, pinField); }
 
-    public String getArqcField() { return getPropertyAsString(ARQCFIELD); }
-    public void setArqcField(String arqcField) { setProperty(ARQCFIELD, arqcField); }
+    public String getIccField() { return getPropertyAsString(ICCFIELD); }
+    public void setIccField(String iccField) { setProperty(ICCFIELD, iccField); }
 
     public String getImkac() { return getPropertyAsString(IMKAC); }
     public void setImkac(String imkac) { setProperty(IMKAC, imkac); }
@@ -227,4 +231,12 @@ public class ISO8583Crypto extends AbstractTestElement
     public String getSkdm() { return getPropertyAsString(SKDM); }
     public void setSkdm(String skdm) { setProperty(SKDM, skdm); }
 
+    public String getPan() { return getPropertyAsString(PAN); }
+    public void setPan(String pan) { setProperty(PAN, pan); }
+
+    public String getPsn() { return getPropertyAsString(PSN); }
+    public void setPsn(String psn) { setProperty(PSN, psn); }
+
+    public String getTxnData() { return getPropertyAsString(TXNDATA); }
+    public void setTxnData(String txnData) { setProperty(TXNDATA, txnData); }
 }

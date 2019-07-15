@@ -7,6 +7,7 @@ import org.apache.jmeter.testbeans.TestBean;
 public interface ISO8583TestElement extends TestBean {
     int RESPONSE_CODE_FIELD_NO = 39,
         PIN_FIELD_NO = 52,
+        ICC_FIELD_NO = 55,
         MAC_FIELD_NO = 64;
 
     // JMeter config properties names:

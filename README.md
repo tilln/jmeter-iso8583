@@ -1,6 +1,6 @@
 # jmeter-iso8583 [![travis][travis-image]][travis-url]
 
-[travis-image]: https://travis-ci.org/tilln/jmeter-iso8583.svg?branch=master
+[travis-image]: https://travis-ci.com/tilln/jmeter-iso8583.svg?branch=master
 [travis-url]: https://travis-ci.com/tilln/jmeter-iso8583
 
 Overview

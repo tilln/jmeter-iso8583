@@ -22,6 +22,14 @@ that needs to be configured with an XML file.
 Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/master/jpos/src/dist/cfg/packager)
 may be used as is or with few customisations.
 
+#### Sample Message
+
+![Message](docs/request.png)
+
+In JMeter's *View Results Tree* and JTL files, request and response messages are represented 
+as XML, so Extractors and Assertions can easily be used.
+A hex dump of the raw (binary) message is included for troubleshooting purposes.
+
 
 Usage
 -----
@@ -44,7 +52,7 @@ XML configuration file that defines the packaging format of each message field (
     * Server mode (switch connects to JMeter): Leave blank. JMeter will wait for incoming connection from the switch.
 - *Port*: Port number to connect to (outgoing from JMeter in client mode; incoming to JMeter in server mode).
 
-##### Technical Details
+##### Implementation Details
 
 This component encapsulates a jPOS [Q2 container](http://jpos.org/doc/proguide.pdf#%5B%7B%22num%22%3A2464%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C54%2C769.889%2Cnull%5D)
 and [QBeans services](http://jpos.org/doc/proguide.pdf#%5B%7B%22num%22%3A3393%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C54%2C769.889%2Cnull%5D).
@@ -67,8 +75,8 @@ For even more advanced use cases, above XML files may still be used and copied t
 
 ![ISO8583 Sampler](docs/sampler.png)
 
-Each row of the *Message Fields* represents one data element of the message. The columns have the following meaning:
-- *Field*: Field identifier (decimal), with 0 being the Message Type Indicator (MTI).
+Each row of the *Message Fields* table represents one data element of the message. The columns have the following meaning:
+- *Field*: Field number (decimal), with 0 being the Message Type Indicator (MTI).
 - *Content*: A string representation of the field's data content. This may be a text, numeric, or binary value. 
 Note that the Packager configuration determines how this is interpreted.
 For example, a binary field will expect a string of hexadecimal digits (without `0x` prefix).
@@ -81,6 +89,16 @@ JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions
 can be used to enter such binary values.
 
 Note that Bitmaps will be generated automatically.
+
+Optional message header and trailers may be specified as hex digits.
+
+#### Response Validation
+
+- *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
+- *Response Code Field* (usually 39): Field identifier that is used to determine a sample success or failure.
+- *Success Response Code* (usually 00): Expected value for successful responses.
+
+If either of the Response Code fields are empty, no validation will be performed.
 
 #### Subfields
 
@@ -146,7 +164,7 @@ Provided a matching packager configuration like this:
 ![ISO8583 Template](docs/template.png)
 
 This (optional) Configuration element may be used to define fields in the same way as for the *ISO8583 Sampler*.
-However, its fields will be applied to all samplers in scope, so it can be used for common data element like dates and times.
+However, its fields will be applied to all samplers in scope, so it can be used for common data elements like dates and times.
 
 |Field|Content|Tag|Comment|
 |-----|-------|---|-------|
@@ -157,7 +175,7 @@ However, its fields will be applied to all samplers in scope, so it can be used 
 |16|<code>${__time(MMdd,)}</code>| |Currency conversion date|
 |17|<code>${__time(MMdd,)}</code>| |Capture date|
 
-If any particular field ID is present in the sampler as well as the template, the one in the sampler takes precedence.
+If any particular field number is present in the sampler as well as the template, the one in the sampler takes precedence.
 
 If a sampler has more than one template in its scope, their fields will all be merged into the sampler, 
 unless a field is already present in the sampler *or* a template in a scope closer to the sampler.
@@ -179,12 +197,12 @@ rather than being generated before the test, as they may depend on dynamic sessi
 Currently supported are the following operations:
 - *PIN Block Encryption*: Encrypts a clear PIN Block given a session PIN key.
 - *MAC Generation*: Calculates the MAC (Message Authentication Code), given a session MAC key.
-- *ARQC Generation*: Calculates the EMV [Application Request Cryptogram (ARQC)], given the Issuer Master Key (IMKAC).
+- *ARQC Generation*: Calculates the Authorization Request Cryptogram (ARQC), given the Issuer Master Key (IMKAC).
 
 All keys need to be provided as clear (unencrypted) hex digits.
 
-Any subset of these operations may be performed by leaving some or all of the other ones' fields blank 
-(e.g. the key fields).
+Any subset of these operations may be performed by leaving some or all of the other ones' inputs blank.
+For example, if no key is present for one of the operations, it will be skipped.
 
 As the MAC depends on the entire message content, its calculation is the last to be done.
 
@@ -208,7 +226,7 @@ and the calculated ARQC value will be added as an additional subfield.
 - *Primary Account Number (PAN)*: Input parameter for session key derivation.
 - *Account Sequence Number*: Input parameter for session key derivation (2 digits) .
 - *Additional Transaction Data*: Hex digits entered here will be appended to the sequence of ARQC input bytes 
-extracted from the ICC Data field. Can be used if non-standard tags are to be included in the calculation.
+extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
 
 
 Installation

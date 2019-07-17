@@ -72,6 +72,10 @@ public class ISO8583Sampler extends AbstractSampler
     // This gets called first thing in TestCompiler.configureWithConfigElements,
     // so we can sneak in the sampler's own fields to be applied (as a pseudo-config element)
     // before the surrounding ISO8583Template elements.
+    // TODO perhaps even build the ISOMsg here so Preprocessors can modify that instead?
+    // Though that would mean updating the ISOMsg object when modifying the template fields (as JMeterProperties)
+    // or the ISOMsg must not be built again when calling getRequest() in sample()
+    // otherwise the Preprocessors modifications are lost.
     @Override
     public void clearTestElementChildren() {
         TestBeanHelper.prepare(this);
@@ -107,7 +111,7 @@ public class ISO8583Sampler extends AbstractSampler
         log.debug("sampleStart");
         result.sampleStart();
         try {
-            response = sendMessage(request);
+            response = sendRequest(request);
         } catch (ISOException | NameRegistrar.NotFoundException e) {
             log.error("Send failed {}", e.toString(), e);
             result.setResponseMessage(e.toString());
@@ -161,7 +165,7 @@ public class ISO8583Sampler extends AbstractSampler
         return result;
     }
 
-    protected ISOMsg sendMessage(ISOMsg request) throws ISOException, NameRegistrar.NotFoundException {
+    protected ISOMsg sendRequest(ISOMsg request) throws ISOException, NameRegistrar.NotFoundException {
         MUX mux = QMUX.getMUX(config.getMuxName());
         return mux.request(request, getTimeout());
     }

@@ -81,12 +81,14 @@ Each row of the *Message Fields* table represents one data element of the messag
 Note that the Packager configuration determines how this is interpreted.
 For example, a binary field will expect a string of hexadecimal digits (without `0x` prefix).
 A text field's character encoding depends on the Packager configuration too (e.g. ASCII, EBCDIC).
-- *Tag*: Only used for tagged fields (e.g. ICC/EMV data fields).
+- *Tag* (hexadecimal): Used for tagged fields (e.g. ICC/EMV data fields), otherwise empty.
 - *Comment*: For documentation purposes.
 
-If the packager fields is not a binary field, and therefore does not interpret the content as hex digits,
+If the Packager's field type is not binary or cannot be determined (e.g. if there are no subfields, as for 
+[BERTLVBinaryPackager](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
+the *Content* will be taken a as and not be interpreted as hex digits.
 JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions.html#__char)
-can be used to enter such binary values.
+can be used to enter binary values in that case.
 
 Note that Bitmaps will be generated automatically.
 
@@ -95,7 +97,7 @@ Optional message header and trailers may be specified as hex digits.
 #### Response Validation
 
 - *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
-- *Response Code Field* (usually 39): Field identifier that is used to determine a sample success or failure.
+- *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Code* (usually 00): Expected value for successful responses.
 
 If either of the Response Code fields are empty, no validation will be performed.

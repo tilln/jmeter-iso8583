@@ -186,7 +186,7 @@ public class ISO8583Crypto extends AbstractTestElement
             }
             final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
                 "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-            ).split("[,;:. ]");
+            ).split(TAG_SEPARATOR_REGEX);
 
             final StringBuffer transactionData = new StringBuffer();
             for (String tag : arqcInputTags) {

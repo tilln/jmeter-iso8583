@@ -78,17 +78,34 @@ public class MessageBuilderTest extends ISO8583TestBase {
     }
 
     @Test
+    public void shouldRecogniseBinaryFields() {
+        assertFalse(instance.isBinaryField("0"));
+        assertFalse(instance.isBinaryField("39"));
+
+        assertFalse(instance.isBinaryField("43"));
+        assertFalse(instance.isBinaryField("43.1"));
+        assertTrue(instance.isBinaryField("43.3"));
+
+        assertTrue(instance.isBinaryField("55"));
+        assertFalse(instance.isBinaryField("55.1"));
+
+        assertTrue(instance.isBinaryField("60"));
+        assertFalse(instance.isBinaryField("60.1"));
+        assertFalse(instance.isBinaryField("60.2")); // can't recognise this as binary since the delegate is not exposed
+    }
+
+    @Test
     public void shouldPopulateSubfields() throws ISOException {
         fields = Arrays.asList(
             new MessageField("43.1", "JMETER"),
             new MessageField("43.2", "WELLINGTON"),
-            new MessageField("43.3", "NZ")
+            new MessageField("43.3", ISOUtil.byte2hex("NZ".getBytes()))
         );
         ISOMsg msg = instance.define(fields).getMessage();
         assertTrue(msg.hasField(43));
         assertEquals("JMETER", msg.getString("43.1"));
         assertEquals("WELLINGTON", msg.getString("43.2"));
-        assertEquals("NZ", msg.getString("43.3"));
+        assertEquals("NZ", new String(msg.getBytes("43.3")));
 
         ISOMsg msg2 = instance.define(Arrays.asList(
             new MessageField("43", "JMETER                   WELLINGTON   NZ")
@@ -99,7 +116,7 @@ public class MessageBuilderTest extends ISO8583TestBase {
     @Test
     public void shouldPopulateTaggedSubfields() throws ISOException {
         fields = Arrays.asList(
-            new MessageField("48.1", "cafe", "a1"),
+            new MessageField("48.1", ISOUtil.byte2hex("cafe".getBytes()), "a1"),
             new MessageField("48.2", "1234", "a2"),
             new MessageField("48.3", "abcdef", "a3")
         );

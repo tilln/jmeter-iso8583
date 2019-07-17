@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE isopackager PUBLIC
         "-//jPOS/jPOS Generic Packager DTD 1.0//EN"
-        "http://jpos.org/dtd/generic-packager-1.0.dtd">
+        "http://jpos.org/dtd/generic-subtag-packager.dtd">
 
 <isopackager>
   <isofield
@@ -35,10 +35,11 @@
       name="CARD ACCEPTOR TERMINAL IDENTIFICACION"
       class="org.jpos.iso.IF_CHAR"/>
 
-  <isofieldpackager id="43"
+  <isofieldpackager
+      id="43"
       name="CARD ACCEPTOR LOCATION"
       length="40"
-      class="org.jpos.iso.IFB_BINARY"
+      class="org.jpos.iso.IF_CHAR"
       packager="org.jpos.iso.packager.GenericSubFieldPackager"
       emitBitmap="false"
       firstField="1"
@@ -57,7 +58,7 @@
         name="COUNTRY"
         length="2"
         pad="false"
-        class="org.jpos.iso.IF_CHAR"/>
+        class="org.jpos.iso.IFB_BINARY"/>
   </isofieldpackager>
 
   <isofieldpackager
@@ -100,6 +101,27 @@
       length="8"
       name="PIN DATA"
       class="org.jpos.iso.IFA_BINARY"/>
+
+  <isofieldpackager
+      id="60"
+      length="999"
+      name="Transaction Environment Data"
+      class="org.jpos.iso.IFA_LLLBINARY"
+      emitBitmap="false"
+      tagMapper="org.jpos.iso.packager.TTDecimalTagMapper"
+      packager="org.jpos.iso.packager.GenericTaggedFieldsPackager">
+    <isofield
+        id="1"
+        length="21"
+        name="Point of Service Data"
+        class="org.jpos.iso.IFA_TTLLLCHAR"/>
+    <isofield
+        id="2"
+        length="21"
+        name="Point of Service Data"
+        class="org.jpos.iso.IFA_TTLBINARY"/>
+  </isofieldpackager>
+
   <isofield
       id="64"
       length="8"

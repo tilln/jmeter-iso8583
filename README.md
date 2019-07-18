@@ -84,19 +84,34 @@ A text field's character encoding depends on the Packager configuration too (e.g
 - *Tag* (hexadecimal): Used for tagged fields (e.g. ICC/EMV data fields), otherwise empty.
 - *Comment*: For documentation purposes.
 
-If the Packager's field type is not binary or cannot be determined (e.g. if there are no subfields, as for 
-[BERTLVBinaryPackager](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
-the *Content* will be taken a as and not be interpreted as hex digits.
-JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions.html#__char)
-can be used to enter binary values in that case.
-
 Note that Bitmaps will be generated automatically.
 
 Optional message header and trailers may be specified as hex digits.
 
+#### Binary Field Content
+
+If the field's `class` attribute in the Packager configuration file is a subclass of 
+[`ISOBinaryFieldPackager`](http://jpos.org/doc/javadoc/org/jpos/iso/ISOBinaryFieldPackager.html)
+the field's *Content* is treated as binary and interpreted as hex digits (replacing incorrect digits with `F`).
+
+If the Packager's field class is not binary or cannot be determined (e.g. if there are no subfields, as for
+[BERTLVBinaryPackager](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
+the *Content* will be taken as is and not be interpreted as hex digits.
+JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions.html#__char)
+can be used to enter binary values in that case.
+
+For tagged fields, the tag value is also used to distinguish binary fields.
+This works for well-known, standard EMV tags, but needs to be configured for proprietary tags.
+The JMeter property `jmeter.iso8583.binaryFieldTags`
+
+
 #### Response Validation
 
+The response code can be used to distinguish failed and successful samples 
+(similar to JMeter's [HTTP Request](https://jmeter.apache.org/usermanual/component_reference.html#HTTP_Request)
+marking 4xx and 5xx responses as failures).
 - *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
+  The value 0 turn off the timeout, and should be used with care.
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Code* (usually 00): Expected value for successful responses.
 
@@ -104,7 +119,7 @@ If either of the Response Code fields are empty, no validation will be performed
 
 #### Subfields
 
-Field 43 "Card Acceptor Location" contains 3 sub-fields that can be defined as follows:
+For example, field 43 "Card Acceptor Location" contains 3 subfields that can be defined as follows:
 
 |Field|Content|Tag|Comment|
 |-----|-------|---|-------|
@@ -131,7 +146,7 @@ This has to be matched by a packager configuration like the below:
 
 #### Tagged Fields
 
-Field 55 with ICC/[EMV](https://en.wikipedia.org/wiki/EMV) data 
+For example, field 55 with ICC/[EMV](https://en.wikipedia.org/wiki/EMV) data 
 in [BER-TLV](https://en.wikipedia.org/wiki/Basic_Encoding_Rules) format can be defined as in the following example:
 
 |Field|Content|Tag|Comment|
@@ -278,9 +293,12 @@ The following properties control the plugin behaviour:
 - `jmeter.iso8583.channelReconnectDelay` (ms): 
    May be used to override the Q2 Channel Adaptor default of 10 seconds.
 - `jmeter.iso8583.arqcInputTags`:
-   Comma separated list of hexadecimal EMV Tag numbers that will be included in the ARQC calculation.
+   Comma-separated list of hexadecimal EMV Tag numbers that will be included in the ARQC calculation.
    This may be used to include additional (or exclude standard) tags
    (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
+- `jmeter.iso8583.binaryFieldTags`:
+   Comma-separated list of hexadecimal Tag numbers that will be interpreted as binary fields
+   (default: none).
 
 
 Limitations

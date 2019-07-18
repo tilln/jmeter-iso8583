@@ -159,4 +159,14 @@ public class MessageBuilderTest extends ISO8583TestBase {
         ISOMsg msg = instance.define(fields).getMessage();
         assertEquals("0020000000000000123456", new String(msg.pack()));
     }
+
+    @Test
+    public void shouldIgnoreWrongBinaryContent() throws ISOException {
+        fields = Arrays.asList(
+            new MessageField("52", "1122334455++$$ZZ")
+        );
+        ISOMsg msg = instance.define(fields).getMessage();
+        assertEquals("00000000000010001122334455FFFFFF", new String(msg.pack()));
+    }
+
 }

@@ -44,7 +44,7 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
 
         p = property(ICCFIELD);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
-        p.setValue(DEFAULT, ICC_FIELD_NO);
+        p.setValue(DEFAULT, String.valueOf(ICC_FIELD_NO));
 
         p = property(IMKAC);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);

@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Key;
+import org.apache.jmeter.util.JMeterUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jpos.core.Configuration;
 import org.jpos.core.ConfigurationException;
@@ -15,6 +16,7 @@ import org.jpos.security.jceadapter.JCEHandlerException;
 import org.jpos.security.jceadapter.JCESecurityModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.KSN_DESCRIPTOR;
 
 /* Extension of jPOS class to use non-public methods (like calculateARQC).
  */
@@ -105,24 +107,42 @@ public class SecurityModule extends JCESecurityModule {
         return "";
     }
 
-    // TODO WIP, untested
-    // PIN encryption with DUKPT
-    // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/security/jceadapter/JCESecurityModule.java#L2452
-    public String encryptPINBlock(String baseKeyID, String deviceID, String transactionCounter,
-            String clearBDK, String clearPINBlock, boolean tdes) {
-        KeySerialNumber ksn = new KeySerialNumber(baseKeyID, deviceID, transactionCounter);
+    protected KeySerialNumber parseKSN(String ksn) {
+        final String ksnDescriptor = JMeterUtils.getPropDefault(KSN_DESCRIPTOR, "6-5-5");
+
+        if (!ksnDescriptor.matches("[0-9]+-[0-9]+-[0-9]+")) {
+            log.error("Invalid KSN Descriptor '{}'", ksnDescriptor);
+            return null;
+        }
+        String[] digits = ksnDescriptor.split("-");
+        int deviceIdStart = Integer.parseInt(digits[0]);
+        int deviceIdEnd = deviceIdStart + Integer.parseInt(digits[1]);
+        int totalDigits = deviceIdEnd + Integer.parseInt(digits[2]);
+
+        final String baseKeyID = ksn.substring(0, deviceIdStart),
+            deviceID = ksn.substring(deviceIdStart, deviceIdEnd),
+            transactionCounter = ksn.substring(deviceIdEnd, totalDigits);
+
+        return new KeySerialNumber(baseKeyID, deviceID, transactionCounter);
+    }
+
+    public String encryptPINBlock(byte[] clearPINBlock, String clearBDK, String keySerialNumber) {
         try {
-            SecureDESKey bdk = formKEYfromClearComponents(LENGTH_DES3_2KEY, TYPE_BDK, clearBDK); // TODO what keyLength?
-            byte[] derivedKey = calculateDerivedKey(ksn, bdk, tdes, false);
-            byte[] translatedPINBlock = specialEncrypt(ISOUtil.hex2byte(clearPINBlock), derivedKey);
+            KeySerialNumber ksn = parseKSN(keySerialNumber);
+            SecureDESKey bdk = formKEYfromClearComponents(LENGTH_DES3_2KEY, TYPE_BDK, clearBDK);
+
+            // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/security/jceadapter/JCESecurityModule.java#L2452-L2453
+            byte[] derivedKey = calculateDerivedKey(ksn, bdk, true, false);
+            log.debug("UDK={}", ISOUtil.byte2hex(derivedKey));
+
+            byte[] translatedPINBlock = specialEncrypt(clearPINBlock, derivedKey);
             return ISOUtil.byte2hex(translatedPINBlock);
         } catch (SMException e) {
-            log.error("DUKPT PIN-Block encryption failed {}", e.toString(), e);
+            log.error("DUKPT PIN Block encryption failed {}", e.toString(), e);
         }
         return "";
     }
 
-    // TODO WIP, untested
     public String calculateCVV(String accountNo, Key cvk, String expDate, String serviceCode) {
         try {
             Method m = getClass().getSuperclass().getDeclaredMethod("calculateCVD",

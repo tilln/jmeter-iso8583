@@ -33,6 +33,7 @@ public class ISO8583Crypto extends AbstractTestElement
         MACKEY = "macKey",
         PINFIELD = "pinField",
         PINKEY = "pinKey",
+        KSNFIELD = "ksnField",
         ICCFIELD = "iccField",
         IMKAC = "imkac",
         SKDM = "skdm",
@@ -114,7 +115,7 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void encryptPINBlock(ISO8583Sampler sampler) {
-        final String pinKeyHex = getPinKey(), pinField = getPinField();
+        final String pinKeyHex = getPinKey(), pinField = getPinField(), ksnField = getKsnField();
 
         if (pinField == null || pinField.isEmpty()) {
             log.debug("No PIN field defined, skipping PIN Block encryption");
@@ -141,11 +142,28 @@ public class ISO8583Crypto extends AbstractTestElement
             log.debug("No PIN Block defined, skipping PIN Block encryption");
             return;
         }
-        try {
-            sampler.addField(pinField, securityModule.encryptPINBlock(msg.getBytes(pinField), pinKey));
-        } catch (JCEHandlerException e) {
-            log.error("PIN Block encryption failed {}", e.toString(), e);
+        String encryptedPINBlock;
+        if (ksnField != null && !ksnField.isEmpty()) {
+            if (!msg.hasField(ksnField)) {
+                log.debug("No KSN defined, skipping PIN Block encryption");
+                return;
+            }
+            if (pinKeyHex.length() == 16) {
+                log.error("Incorrect BDK length '{}' (expecting 32 or 48 hex digits)", pinKeyHex);
+                return;
+            }
+            log.debug("KSN found, doing DUKPT encryption");
+            encryptedPINBlock = securityModule.encryptPINBlock(msg.getBytes(pinField), pinKeyHex, msg.getString(ksnField));
+        } else {
+            log.debug("No KSN defined, doing Zone PIN encryption");
+            try {
+                encryptedPINBlock = securityModule.encryptPINBlock(msg.getBytes(pinField), pinKey);
+            } catch (JCEHandlerException e) {
+                log.error("PIN Block encryption failed {}", e.toString(), e);
+                return;
+            }
         }
+        sampler.addField(pinField, encryptedPINBlock);
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
@@ -168,10 +186,11 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Incorrect IMKAC length '{}' (expecting 32 hex digits)", hexKey);
             return;
         }
+        final Map<String, String> emvData = new HashMap<>();
+        final String arqcFieldNo;
         try {
-            final Map<String, String> emvData = new HashMap<>();
             final ISOComponent emvField = msg.getComponent(fieldNo);
-            final String arqcFieldNo = String.format("%s.%d", fieldNo, emvField.getMaxField()+1);
+            arqcFieldNo = String.format("%s.%d", fieldNo, emvField.getMaxField()+1);
 
             for (Object c : emvField.getChildren().values()) {
                 if (c instanceof ISOTaggedField) {
@@ -184,30 +203,29 @@ public class ISO8583Crypto extends AbstractTestElement
                     log.debug("Ignoring non-tagged field {}", c);
                 }
             }
-            final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
-                "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-            ).split(TAG_SEPARATOR_REGEX);
-
-            final StringBuffer transactionData = new StringBuffer();
-            for (String tag : arqcInputTags) {
-                transactionData.append(emvData.getOrDefault(tag, ""));
-            }
-            transactionData.append(getTxnData()); // additional transaction data (as hex string)
-            log.debug("ARQC input bytes '{}'", transactionData);
-
-            final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
-                SKDMethod.valueOf(getSkdm()), hexKey,
-                emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), getPan()),
-                emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), getPsn()),
-                emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
-                emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
-                transactionData.toString());
-
-            sampler.addField(arqcFieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
         } catch (ISOException e) {
-            log.error("ARQC calculation failed {}", e.toString(), e);
+            log.error("ARQC input extraction failed {}", e.toString(), e);
             return;
         }
+        final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
+            "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
+        ).split(TAG_SEPARATOR_REGEX);
+
+        final StringBuffer transactionData = new StringBuffer();
+        for (String tag : arqcInputTags) {
+            transactionData.append(emvData.getOrDefault(tag, ""));
+        }
+        transactionData.append(getTxnData()); // additional transaction data (as hex string)
+
+        final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
+            SKDMethod.valueOf(getSkdm()), hexKey,
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), getPan()),
+            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), getPsn()),
+            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
+            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
+            transactionData.toString());
+
+        sampler.addField(arqcFieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
     }
 
     public String getMacAlgorithm() { return getPropertyAsString(MACALGORITHM); }
@@ -221,6 +239,9 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getPinField() { return getPropertyAsString(PINFIELD); }
     public void setPinField(String pinField) { setProperty(PINFIELD, pinField); }
+
+    public String getKsnField() { return getPropertyAsString(KSNFIELD); }
+    public void setKsnField(String ksnField) { setProperty(KSNFIELD, ksnField); }
 
     public String getIccField() { return getPropertyAsString(ICCFIELD); }
     public void setIccField(String iccField) { setProperty(ICCFIELD, iccField); }

@@ -10,7 +10,7 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("PIN", new String[]{
-             PINFIELD, PINKEY,
+             PINFIELD, PINKEY, KSNFIELD,
         });
 
         p = property(PINFIELD);
@@ -20,6 +20,10 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p = property(PINKEY);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        p = property(KSNFIELD);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, String.valueOf(ISO8583TestElement.KSN_FIELD_NO));
 
         createPropertyGroup("MAC", new String[]{
              MACALGORITHM, MACKEY,

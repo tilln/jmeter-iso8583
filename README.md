@@ -212,9 +212,9 @@ This is necessary for some fields that can only be determined during runtime of 
 rather than being generated before the test, as they may depend on dynamic session keys or other, dynamic message fields.
 
 Currently supported are the following operations:
-- *PIN Block Encryption*: Encrypts a clear PIN Block given a session PIN key.
+- *PIN Block Encryption*: Encrypts a clear PIN Block given a zone PIN key (ZPK) or base derivation key (BDK).
 - *MAC Generation*: Calculates the MAC (Message Authentication Code), given a session MAC key.
-- *ARQC Generation*: Calculates the Authorization Request Cryptogram (ARQC), given the Issuer Master Key (IMKAC).
+- *ARQC Generation*: Calculates the Authorization Request Cryptogram (ARQC), given the ICC Master Key (IMKAC).
 
 All keys need to be provided as clear (unencrypted) hex digits.
 
@@ -226,13 +226,22 @@ As the MAC depends on the entire message content, its calculation is the last to
 #### PIN Block Encryption
 
 - *PIN Field Number* (usually 52): A clear PIN Block in this field will be replaced with the encrypted one.
-- *PIN Key (hex)*: Clear Triple-DES key (16, 32 or 48 hex digits), usually from a a key exchange.
+- *PIN Key (hex)*: Clear DES key to use as ZPK for zone PIN encryption (16, 32 or 48 hex digits), 
+or Triple-DES key to use as BDK for DUKPT (32 hex digits).
+- *KSN Field Number* (usually 53): Empty for zone PIN encryption. Otherwise, for DUKPT encryption, 
+the 16 hex digits in this field will be interpreted as the Key Serial Number (KSN).
+
+The KSN scheme can be configured by changing the JMeter property `jmeter.iso8583.ksnDescriptor`. 
+For example, its default `6-5-5` means `bbbbbbdddddccccc` will be partitioned into 
+BDK ID `bbbbbb`, Device ID `ddddd`, and Counter `ccccc`.
 
 #### MAC Generation
 
 - *MAC Algorithm*: Cipher algorithm name for EDE or CBC MAC calculation 
 (refer [BouncyCastle specification](https://www.bouncycastle.org/specifications.html))
 - *MAC Key (hex)*: Clear Triple-DES key (32 or 48 hex digits), usually from a key exchange.
+
+The MAC field will be the next multiple of 64 from teh last field in the message (e.g. 64, 128, 192).
 
 #### ARQC Generation
 
@@ -245,6 +254,7 @@ and the calculated ARQC value will be added as an additional subfield.
 - *Additional Transaction Data*: Hex digits entered here will be appended to the sequence of ARQC input bytes 
 extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
 
+Missing ARQC input tags will be ignored, i.e. no validation mandatory is performed that all mandatory tags are present.
 
 Installation
 ------------
@@ -293,13 +303,16 @@ The following properties control the plugin behaviour:
 - `jmeter.iso8583.channelReconnectDelay` (ms): 
    May be used to override the Q2 Channel Adaptor default of 10 seconds.
 - `jmeter.iso8583.arqcInputTags`:
-   Comma-separated list of hexadecimal EMV Tag numbers that will be included in the ARQC calculation.
+   Comma-separated list of hexadecimal EMV tag numbers that will be included in the ARQC calculation.
    This may be used to include additional (or exclude standard) tags
    (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
 - `jmeter.iso8583.binaryFieldTags`:
-   Comma-separated list of hexadecimal Tag numbers that will be interpreted as binary fields
+   Comma-separated list of hexadecimal tag numbers that will be interpreted as binary fields
    (default: none).
-
+- `jmeter.iso8583.ksnDescriptor`:
+   Defines the [Key Serial Number Scheme](https://en.wikipedia.org/wiki/Derived_unique_key_per_transaction#Practical_Matters_(KSN_scheme)),
+   i.e. the length (in hex digits) of the KSN parts - BDK ID (or KSI), Device ID (or TRSM ID), transaction counter
+   (default: "6-5-5").
 
 Limitations
 -----------

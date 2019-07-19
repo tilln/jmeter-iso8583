@@ -1,13 +1,16 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Key;
 import org.apache.jmeter.util.JMeterUtils;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
+import org.jpos.iso.ISOUtil;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Crypto.skdMethods;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.ARQC_INPUT_TAGS;
-import static org.junit.Assert.*;
 
 public class ISO8583CryptoTest extends ISO8583TestBase {
 
@@ -146,9 +149,9 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     @Test
     public void shouldAppendAdditionalARQCInputTags() throws ISOException {
         sampler.setFields(asMessageFields(
-                new MessageField("55.1", "ABCD", "9f1e"),
-                new MessageField("55.2", "01", "9f36"),
-                new MessageField("55.3", "11223344", "9f37")
+            new MessageField("55.1", "ABCD", "9f1e"),
+            new MessageField("55.2", "01", "9f36"),
+            new MessageField("55.3", "11223344", "9f37")
         ));
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setSkdm(skdMethods[0]);
@@ -164,5 +167,33 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         assertTrue(msg.hasField("55.4"));
         assertTrue(msg.hasField("55.5"));
         assertNotEquals(msg.getString("55.4"), msg.getString("55.5"));
+    }
+
+    @Test
+    public void shouldDUKPTEncryptPINBlock() {
+        instance.setPinField(String.valueOf(instance.PIN_FIELD_NO));
+        instance.setPinKey(DEFAULT_3DES_KEY);
+        instance.setKsnField(String.valueOf(instance.KSN_FIELD_NO));
+        String clearPinBlock = "041277cccddddeee";
+
+        sampler.addField(String.valueOf(instance.PIN_FIELD_NO), clearPinBlock);
+        sampler.addField(String.valueOf(instance.KSN_FIELD_NO), "9876543210E00001");
+        instance.process();
+
+        ISOMsg msg = sampler.getRequest();
+        assertTrue(msg.hasField(instance.PIN_FIELD_NO));
+        String pinBlock = msg.getString(instance.PIN_FIELD_NO);
+        assertEquals(clearPinBlock.length(), pinBlock.length());
+        assertEquals("C0F224AD1647A8EB", pinBlock);
+    }
+
+    @Test
+    public void shouldCalculateCVV() {
+        String pan = "4444333322221111", exp = "9911";
+        Key cvk = new SecretKeySpec(ISOUtil.hex2byte(DEFAULT_3DES_KEY), "DESede");
+        assertEquals("662", instance.securityModule.calculateCVV(pan, cvk, exp, "101")); // CVV
+        assertEquals("114", instance.securityModule.calculateCVV(pan, cvk, exp, "000")); // CVV2
+        assertEquals("163", instance.securityModule.calculateCVV(pan, cvk, exp, "999")); // iCVV
+
     }
 }

@@ -138,22 +138,6 @@ public class ISO8583Config extends ConfigTestElement
                 .setAttribute("name", "port")
                 .setAttribute("value", getPort()));
 
-        if (getKeystore() != null && !getKeystore().isEmpty()) {
-            channelDescriptor
-                .addContent(new Element("property")
-                    .setAttribute("name", "socketFactory")
-                    .setAttribute("value", SunJSSESocketFactory.class.getName()))
-                .addContent(new Element("property")
-                        .setAttribute("name", "keystore")
-                        .setAttribute("value", getKeystore()))
-                .addContent(new Element("property")
-                    .setAttribute("name", "storepassword")
-                    .setAttribute("value", getStorePassword()))
-                .addContent(new Element("property")
-                    .setAttribute("name", "keypassword")
-                    .setAttribute("value", getKeyPassword()));
-        }
-
         getChannelConfig().forEach(p ->
             channelDescriptor.addContent(new Element("property")
                 .setAttribute("name", p.getName())
@@ -162,11 +146,39 @@ public class ISO8583Config extends ConfigTestElement
         return channelDescriptor;
     }
 
+    protected Element addSSLConfig(Element descriptor) {
+        if (getKeystore() == null || getKeystore().isEmpty()) return descriptor;
+
+        // socketFactory attr vs property
+        // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L252
+        // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/q2/iso/ChannelAdaptor.java#L466
+        descriptor
+            .addContent(isServer() ?
+                new Element("attr")
+                    .setAttribute("name", "socketFactory")
+                    .addContent(SunJSSESocketFactory.class.getName()) :
+                new Element("property")
+                    .setAttribute("name", "socketFactory")
+                    .setAttribute("value", SunJSSESocketFactory.class.getName()))
+            .addContent(new Element("property")
+                .setAttribute("name", "keystore")
+                .setAttribute("value", getKeystore()))
+            .addContent(new Element("property")
+                .setAttribute("name", "storepassword")
+                .setAttribute("value", getStorePassword()))
+            .addContent(new Element("property")
+                .setAttribute("name", "keypassword")
+                .setAttribute("value", getKeyPassword()));
+
+        return descriptor;
+    }
+
     // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
     protected ChannelAdaptor startChannelAdaptor() {
         final String key = getPropertyAsString(CONFIG_KEY);
         Element channelDescriptor = getChannelDescriptor(key);
         if (channelDescriptor == null) return null;
+        addSSLConfig(channelDescriptor);
 
         final String port = getPort(), host = getHost();
         if (host == null || host.isEmpty()) {
@@ -218,6 +230,8 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
             .addContent(new Element("ready").addContent(key+".ready"));
+
+        addSSLConfig(descriptor);
 
         QServer qserver = (QServer) deployAndStart(descriptor);
         log.debug("Deployed QServer {}", qserver);

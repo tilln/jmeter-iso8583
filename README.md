@@ -12,7 +12,7 @@ based on the excellent [jPOS framework](http://jpos.org/). Includes the followin
 - [*ISO8583 Sampler*](#sampler) for defining and sending messages,
 - [*ISO8583 Config*](#config) for integration with the system under test,
 - [*ISO8583 Message Template*](#template) (optional) for sharing common message fields,
-- [*ISO8583 Crypto*](#crypto) (optional) for encryption operations of certain message elements (PIN Block, MAC, ARQC).
+- [*ISO8583 Crypto PreProcessor*](#crypto) (optional) for encryption operations of certain message elements (PIN Block, MAC, ARQC).
 
 #### Prerequisites
 A so-called Packager is required to transform ("pack") the message into its binary representation for sending it over the wire.
@@ -40,17 +40,34 @@ Usage
 
 This Configuration element must be included to use the *ISO8583 Sampler*. 
 
-The following fields are mandatory:
-- *Channel Class*: Encapsulates the wire protocol details. 
-The dropdown contains classes included in jPOS 
+Mandatory settings:
+- *Channel Class*: 
+Encapsulates the wire protocol details. The dropdown contains classes included in jPOS 
 (refer [Channels documentation](http://jpos.org/doc/javadoc/org/jpos/iso/channel/package-summary.html)). 
 If none of those are suitable, a custom channel class may be supplied (enter fully qualified class name).
 - *Packager Configuration*:
 XML configuration file that defines the packaging format of each message field (as per Prerequisites above).
 - *Hostname*: 
-    * Client mode (JMeter connects to switch): Name or IP address of the switch to connect to.
-    * Server mode (switch connects to JMeter): Leave blank. JMeter will wait for incoming connection from the switch.
-- *Port*: Port number to connect to (outgoing from JMeter in client mode; incoming to JMeter in server mode).
+    * Client mode (JMeter connects to switch socket): Name or IP address of the switch to connect to.
+    * Server mode (switch connects to JMeter socket): Leave blank. JMeter will wait for incoming connection from the switch
+      before starting threads (timeout configurable via JMeter property `jmeter.iso8583.incomingConnectionTimeout`).
+- *Port*: 
+Port number to connect to (outgoing from JMeter in client mode; incoming to JMeter in server mode).
+
+Optional settings:
+- *Channel Header*: 
+A static header string for all messages (sent and received). 
+Note that some Channels use dynamic headers instead (e.g. VAPChannel).
+- *Advanced Configuration*: 
+Channel-dependent properties can be specified via *Name*/*Value* pairs.
+For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
+for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
+- *SSL Settings*: 
+For SSL/TLS connections, the *Keystore File* 
+(protected with *Keystore Password* for the file and *Key Password* for a private key) should contain:
+    * Client mode: the server's public certificate to trust and, optionally, 
+      the client certificate to send for authentication (mutual SSL).
+    * Server mode: the server certificate (with public and private key).
 
 ##### Implementation Details
 
@@ -62,13 +79,11 @@ It manages either set of 3 components (depending on client or server mode):
 
 While normally those would be configured by placing corresponding XML files into a `deploy` folder,
 here it is done dynamically via transforming configuration properties from the JMeter Test Plan
-into in-memory deployment descriptors (JDOM Elements).
+into in-memory deployment descriptors objects.
 These descriptors are then used to create and deploy QBeans at the test start and destroy them at the end.
 
-Advanced, Channel-dependent configuration properties can be specified via name/value pairs.
-For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
-for VAPChannel's Base1Header.
 For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
+Its location is configurable via JMeter property `jmeter.iso8583.q2DeployDir`.
 
 
 <h3 id="sampler">ISO8583 Sampler</h3>
@@ -95,7 +110,7 @@ If the field's `class` attribute in the Packager configuration file is a subclas
 the field's *Content* is treated as binary and interpreted as hex digits (replacing incorrect digits with `F`).
 
 If the Packager's field class is not binary or cannot be determined (e.g. if there are no subfields, as for
-[BERTLVBinaryPackager](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
+[`BERTLVBinaryPackager`](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
 the *Content* will be taken as is and not be interpreted as hex digits.
 JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions.html#__char)
 can be used to enter binary values in that case.
@@ -232,8 +247,8 @@ or Triple-DES key to use as BDK for DUKPT (32 hex digits).
 the 16 hex digits in this field will be interpreted as the Key Serial Number (KSN).
 
 The KSN scheme can be configured by changing the JMeter property `jmeter.iso8583.ksnDescriptor`. 
-For example, its default `6-5-5` means `bbbbbbdddddccccc` will be partitioned into 
-BDK ID `bbbbbb`, Device ID `ddddd`, and Counter `ccccc`.
+For example, its default "6-5-5" means `bbbbbbdddddccccc` will be partitioned into 
+BDK ID `bbbbbb`, device ID `ddddd`, and transaction counter `ccccc`.
 
 #### MAC Generation
 

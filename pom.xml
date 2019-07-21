@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>nz.co.breakpoint.jmeter</groupId>
+    <groupId>nz.co.breakpoint</groupId>
     <artifactId>jmeter-iso8583</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>jmeter-iso8583</name>
+    <name>${project.artifactId}</name>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,8 +22,8 @@
 
     <scm>
         <url>https://github.com/tilln/jmeter-iso8583</url>
-        <connection>scm:git:git://github.com/tilln/jmeter-iso8583</connection>
-        <developerConnection>scm:git:git@github.com:tilln/jmeter-iso8583.git</developerConnection>
+        <connection>scm:git:git://github.com/tilln/jmeter-iso8583.git</connection>
+        <developerConnection>scm:git:ssh@github.com/tilln/jmeter-iso8583.git</developerConnection>
     </scm>
 
     <dependencies>

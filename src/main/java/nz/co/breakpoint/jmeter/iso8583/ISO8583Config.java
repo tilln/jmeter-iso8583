@@ -28,7 +28,7 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/* This class is effectively a wrapper for the jPOS Q2 container and associated QBeans configuration.
+/** This class is effectively a wrapper for the jPOS Q2 container and associated QBeans configuration.
  * It manages either set of 3 components (depending on client or server mode):
  * - ChannelAdaptor, Channel and QMUX
  * - QServer, Channel and QMUX

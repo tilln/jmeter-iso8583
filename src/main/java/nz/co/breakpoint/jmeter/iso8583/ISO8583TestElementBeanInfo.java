@@ -5,6 +5,9 @@ import java.util.ResourceBundle;
 import org.apache.jmeter.testbeans.BeanInfoSupport;
 import org.apache.jmeter.testbeans.gui.TableEditor;
 
+/** Base class for all GUI elements of the plugin.
+ * Provides convenience methods for creating message fields tables.
+ */
 public class ISO8583TestElementBeanInfo extends BeanInfoSupport {
 
     public ISO8583TestElementBeanInfo(Class<? extends ISO8583TestElement> clazz) {

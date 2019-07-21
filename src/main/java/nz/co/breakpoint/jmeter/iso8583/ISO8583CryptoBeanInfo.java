@@ -3,6 +3,8 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.beans.PropertyDescriptor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Crypto.*;
 
+/** Describes the ISO8583Crypto Preprocessor GUI.
+ */
 public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
     public ISO8583CryptoBeanInfo() {
         super(ISO8583Crypto.class);

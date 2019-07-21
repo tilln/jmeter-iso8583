@@ -6,6 +6,8 @@ import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOUtil;
 
+/** Displays an XML representation of a message, for JMeter sample results (JTL and tree view).
+ */
 public class MessagePrinter {
 
     public static String asString(ISOMsg msg) {

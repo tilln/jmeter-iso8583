@@ -18,7 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.KSN_DESCRIPTOR;
 
-/* Extension of jPOS class to use non-public methods (like calculateARQC).
+/** Adapter for jPOS JCESecurityModule with access to non-public methods via reflection.
+ * This may make jPOS version upgrades difficult when non-public methods change.
  */
 public class SecurityModule extends JCESecurityModule {
 

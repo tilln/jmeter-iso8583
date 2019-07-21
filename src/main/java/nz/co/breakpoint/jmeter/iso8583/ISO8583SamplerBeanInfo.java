@@ -4,7 +4,7 @@ import org.apache.jmeter.testbeans.gui.IntegerPropertyEditor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Sampler.*;
 import java.beans.PropertyDescriptor;
 
-/* Describes the sampler GUI.
+/** Describes the ISO8583Sampler GUI.
  */
 public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
 

@@ -21,6 +21,9 @@ import org.jpos.tlv.ISOTaggedField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Preprocessor for cryptographic calculations on the ISO8583Sampler's message fields.
+ * Implemented are PIN Block encryption (DUKPT or zone encryption), MAC and ARQC generation.
+ */
 public class ISO8583Crypto extends AbstractTestElement
         implements ISO8583TestElement, PreProcessor, TestBean, Serializable {
 
@@ -211,7 +214,7 @@ public class ISO8583Crypto extends AbstractTestElement
             "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
         ).split(TAG_SEPARATOR_REGEX);
 
-        final StringBuffer transactionData = new StringBuffer();
+        final StringBuilder transactionData = new StringBuilder();
         for (String tag : arqcInputTags) {
             transactionData.append(emvData.getOrDefault(tag, ""));
         }

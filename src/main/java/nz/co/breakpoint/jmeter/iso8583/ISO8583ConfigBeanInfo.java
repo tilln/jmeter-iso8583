@@ -5,8 +5,8 @@ import static nz.co.breakpoint.jmeter.iso8583.ISO8583Config.*;
 import org.apache.jmeter.testbeans.gui.FileEditor;
 import org.apache.jmeter.testbeans.gui.TableEditor;
 
-/* Describes the ISO8583Config GUI.
- * Most values may be left undefined so they can be merged with other config elements.
+/** Describes the ISO8583Config GUI.
+ * Most values cannot be left undefined (merging with other config elements is not supported).
  */
 public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
 

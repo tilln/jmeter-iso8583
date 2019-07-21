@@ -16,9 +16,36 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/* Sends an ISOMsg to a jPOS QMUX provided by an ISO8583Config element and receives a response.
+/** Sends an ISOMsg to a jPOS QMUX provided by an ISO8583Config element, and receives a response.
  * Message fields can be specified in the associated TestBean GUI, or via ISO8583Template config elements
  * in scope. Preprocessors may also modify fields.
+ * Sampler lifecycle:
+ * <pre>
+        JMeterThread.executeSamplePackage
+            TestCompiler.configureSampler
+                TestCompiler.configureWithConfigElements
+                    this.clearTestElementChildren
+                        TestBeanHelper.prepare => set all Bean properties
+                            this.setFields => fields from sampler
+                            this.setHeader
+                    this.addTestElement
+                        this.template.merge => fields from other template(s)
+                            this.template.addField
+            JMeterThread.runPreProcessors
+                ISO8583Crypto.process
+                    this.getRequest
+                    this.addField
+            JMeterThread.delay
+            JMeterThread.doSampling
+                TestBeanHelper.prepare => avoid overwriting fields
+                    this.setFields
+                    this.setHeader
+                this.sample
+                    this.getRequest
+ </pre>
+ * The ISOMsg gets built in getRequest() whenever a Preprocessor needs to access the message.
+ * This means it will be rebuilt from Properties, therefore Preprocessor modifications of the message itself won't
+ * persist. Instead, the sampler's properties need to be modified.
  */
 public class ISO8583Sampler extends AbstractSampler
         implements ISO8583TestElement, TestBean, Serializable {
@@ -40,10 +67,10 @@ public class ISO8583Sampler extends AbstractSampler
     protected ISO8583Config config = new ISO8583Config();
     protected ISO8583Template template = new ISO8583Template();
 
-    protected transient MessageBuilder builder; // reusable between samples (with same packager)
+    protected transient MessageBuilder builder = new MessageBuilder(); // reusable between samples
     protected transient ISOMsg response; // for PostProcessors
 
-    private transient boolean fieldsSet = false; // indicates if the fields have been set yet to avoid duplication
+    private transient boolean prepared = false; // indicates if the fields have been set yet to avoid duplication
 
     @Override
     public boolean applies(ConfigTestElement configElement) {
@@ -54,10 +81,13 @@ public class ISO8583Sampler extends AbstractSampler
     public void addTestElement(TestElement el) {
         if (el instanceof ISO8583Config) {
             log.debug("Applying config '{}'", el.getName());
-            // Merge any ISO8583Config elements in scope into this sampler when traversing the JMeter test plan:
+            /* Merge ISO8583Config in scope into this sampler when traversing the JMeter test plan.
+             * Merging multiple config elements is not supported as they would be applied outside-in
+             * and each register their own QBeans.
+             */
             config.addConfigElement((ISO8583Config) el);
             // Make sure all messages have a packager available (to interpret String values correctly):
-            builder = new MessageBuilder(config.createPackager());
+            builder.packager(config.createPackager());
         } else if (el instanceof ISO8583Template) {
             log.debug("Applying template '{}'", el.getName());
             // Add (new) message fields from any ISO8583Template elements in scope to this sampler's fields:
@@ -72,14 +102,10 @@ public class ISO8583Sampler extends AbstractSampler
     // This gets called first thing in TestCompiler.configureWithConfigElements,
     // so we can sneak in the sampler's own fields to be applied (as a pseudo-config element)
     // before the surrounding ISO8583Template elements.
-    // TODO perhaps even build the ISOMsg here so Preprocessors can modify that instead?
-    // Though that would mean updating the ISOMsg object when modifying the template fields (as JMeterProperties)
-    // or the ISOMsg must not be built again when calling getRequest() in sample()
-    // otherwise the Preprocessors modifications are lost.
     @Override
     public void clearTestElementChildren() {
-        TestBeanHelper.prepare(this);
-        fieldsSet = true; // avoid setting fields again after Preprocessors (or their modifications may be overwritten)
+        TestBeanHelper.prepare(this); // calls all property setters
+        prepared = true; // avoid setting fields again after Preprocessors (or their modifications may be overwritten)
     }
 
     // Sampler has to keep track of running vs. non-running versions for non-JMeterProperty members,
@@ -96,7 +122,7 @@ public class ISO8583Sampler extends AbstractSampler
         super.recoverRunningVersion();
         config.recoverRunningVersion();
         template.recoverRunningVersion();
-        fieldsSet = false; // make sure fields get re-applied next time the sampler gets prepared
+        prepared = false; // make sure fields get re-applied next time the sampler gets prepared
     }
 
     @Override
@@ -128,7 +154,7 @@ public class ISO8583Sampler extends AbstractSampler
             byte[] bytes = request.pack();
             log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
             result.setSentBytes((long) bytes.length);
-        } catch (Exception e) {
+        } catch (ISOException e) {
             log.error("Packager error on request '{}'. Check config! {}", getName(), e.toString());
         }
 
@@ -170,12 +196,7 @@ public class ISO8583Sampler extends AbstractSampler
         return mux.request(request, getTimeout());
     }
 
-    // For programmatic access from Pre-/PostProcessors...
-    public ISOMsg getRequest() {
-        if (builder == null) { // TODO better exception handling
-            log.warn("Invalid/missing ISO8583 Config for '{}'", getName());
-            return new ISOMsg();
-        }
+    protected ISOMsg buildRequest() {
         try {
             builder.define(getFields());
         } catch (ISOException e) {
@@ -184,19 +205,21 @@ public class ISO8583Sampler extends AbstractSampler
         return builder.header(getHeader()).trailer(getTrailer()).getMessage();
     }
 
+    // For programmatic access from Pre-/PostProcessors...
+    public ISOMsg getRequest() { return buildRequest(); }
     public ISOMsg getResponse() { return response; }
 
     public void addField(String id, String value) { addField(id, value, ""); }
     public void addField(String id, String value, String tag) { template.addField(new MessageField(id, value, tag)); }
 
     public String getHeader() { return getPropertyAsString(HEADER); }
-    public void setHeader(String header) { setProperty(HEADER, header); }
+    public void setHeader(String header) { if (!prepared) setProperty(HEADER, header); }
 
     public String getTrailer() { return getPropertyAsString(TRAILER); }
-    public void setTrailer(String trailer) { setProperty(TRAILER, trailer); }
+    public void setTrailer(String trailer) { if (!prepared) setProperty(TRAILER, trailer); }
 
     public Collection<MessageField> getFields() { return template.getFields(); }
-    public void setFields(Collection<MessageField> fields) { if (!fieldsSet) template.setFields(fields); }
+    public void setFields(Collection<MessageField> fields) { if (!prepared) template.setFields(fields); }
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
     public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }

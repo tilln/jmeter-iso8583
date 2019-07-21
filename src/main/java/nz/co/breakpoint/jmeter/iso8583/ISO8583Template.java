@@ -8,7 +8,7 @@ import org.apache.jmeter.testelement.property.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/* This optional configuration element provides simple message templating.
+/** This optional configuration element provides simple message templating.
  * It can be used to specify common message fields (such as dates, times, STANs etc.) instead of
  * repeating them for every sampler.
  * Only fields that don't exist will be merged into every ISO8585Sampler in scope.
@@ -37,8 +37,8 @@ public class ISO8583Template extends ConfigTestElement
     }
 
     protected boolean hasField(String id) {
-        for (PropertyIterator it = getFieldsAsProperty().iterator(); it.hasNext(); ) {
-            MessageField own = (MessageField) it.next().getObjectValue();
+        for (JMeterProperty jMeterProperty : getFieldsAsProperty()) {
+            MessageField own = (MessageField) jMeterProperty.getObjectValue();
             if (own.getName().equals(id)) return true;
         }
         return false;
@@ -58,7 +58,7 @@ public class ISO8583Template extends ConfigTestElement
     }
 
     protected void addFields(Collection<MessageField> fields) {
-        fields.forEach(f -> addField(f));
+        fields.forEach(this::addField);
     }
 
     // Need Collection getter/setter for TestBean GUI

@@ -3,6 +3,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.jpos.iso.ISOException;
@@ -80,7 +81,7 @@ public class ISO8583TestBase {
 
     public static Collection<MessageField> asMessageFields(MessageField... fields) {
         Collection<MessageField> collection = new ArrayList<>();
-        for (MessageField f : fields) collection.add(f);
+        collection.addAll(Arrays.asList(fields));
         return collection;
     }
 
@@ -89,5 +90,11 @@ public class ISO8583TestBase {
         msg.set(11, "012345");
         msg.set(41, "543210");
         return msg;
+    }
+
+    public void configureSampler(ISO8583Sampler sampler, ISO8583Config config, MessageField... fields) {
+        ctx.context.setCurrentSampler(sampler);
+        sampler.setFields(asMessageFields(fields));
+        sampler.addTestElement(config);
     }
 }

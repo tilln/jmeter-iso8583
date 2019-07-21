@@ -17,8 +17,8 @@ public class MessageBuilderTest extends ISO8583TestBase {
     Collection<MessageField> fields;
 
     @Before
-    public void setup() throws ISOException {
-        instance = new MessageBuilder(getDefaultTestConfig().createPackager());
+    public void setup() {
+        instance = new MessageBuilder().packager(getDefaultTestConfig().createPackager());
     }
 
     @Test

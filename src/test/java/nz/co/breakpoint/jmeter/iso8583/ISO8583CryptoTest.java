@@ -16,16 +16,14 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
 
     ISO8583Crypto instance = new ISO8583Crypto();
     ISO8583Sampler sampler = new ISO8583Sampler();
-    ISO8583Config config = getDefaultTestConfig();
 
     static final int[] possibleMACFields = new int[]{
         ISO8583Crypto.MAC_FIELD_NO, 2*ISO8583Crypto.MAC_FIELD_NO, 3*ISO8583Crypto.MAC_FIELD_NO};
 
     @Before
     public void setup() {
-        ctx.context.setCurrentSampler(sampler);
-        sampler.addTestElement(config);
-        sampler.setFields(asMessageFields(getDefaultTestMessage()));
+        configureSampler(sampler, getDefaultTestConfig(),
+            asMessageFields(getDefaultTestMessage()).toArray(new MessageField[0]));
     }
 
     @Test
@@ -103,7 +101,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldCalculateARQC() throws ISOException {
+    public void shouldCalculateARQC() {
         sampler.setFields(asMessageFields(
             new MessageField("55.1", "ABCD", "9f1e"),
             new MessageField("55.2", "01", "9f36"),
@@ -120,7 +118,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldHaveConfigurableARQCInputTags() throws ISOException {
+    public void shouldHaveConfigurableARQCInputTags() {
         JMeterUtils.setProperty(ARQC_INPUT_TAGS, "9f37");
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setSkdm(skdMethods[0]);
@@ -147,7 +145,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldAppendAdditionalARQCInputTags() throws ISOException {
+    public void shouldAppendAdditionalARQCInputTags() {
         sampler.setFields(asMessageFields(
             new MessageField("55.1", "ABCD", "9f1e"),
             new MessageField("55.2", "01", "9f36"),

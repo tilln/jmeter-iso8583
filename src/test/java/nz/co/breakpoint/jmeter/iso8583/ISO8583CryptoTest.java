@@ -78,6 +78,17 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
+    public void shouldAllowArbitraryMACField() {
+        instance.setMacAlgorithm("DESEDE");
+        instance.setMacKey(DEFAULT_3DES_KEY);
+        instance.setMacField("52");
+        instance.process();
+        ISOMsg msg = sampler.getRequest();
+        assertTrue(msg.hasField(52));
+        assertTrue(msg.getString(52).matches("[0-9A-F]{16}"));
+    }
+
+    @Test
     public void shouldCalculateMACInLastField() {
         instance.setMacAlgorithm("DESEDE");
         instance.setMacKey(DEFAULT_3DES_KEY);

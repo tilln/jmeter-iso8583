@@ -34,6 +34,7 @@ public class ISO8583Crypto extends AbstractTestElement
     public static final String
         MACALGORITHM = "macAlgorithm",
         MACKEY = "macKey",
+        MACFIELD = "macField",
         PINFIELD = "pinField",
         PINKEY = "pinKey",
         KSNFIELD = "ksnField",
@@ -74,7 +75,7 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateMAC(ISO8583Sampler sampler) {
-        final String macKeyHex = getMacKey(), macAlgorithm = getMacAlgorithm();
+        final String macKeyHex = getMacKey(), macAlgorithm = getMacAlgorithm(), fixedMacField = getMacField();
 
         if (macAlgorithm == null || macAlgorithm.isEmpty()) {
             log.debug("No MAC algorithm defined, skipping MAC calculation");
@@ -102,7 +103,9 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Packager undefined, skipping MAC calculation");
             return;
         }
-        int macField = ((msg.getMaxField() - 1)/MAC_FIELD_NO + 1)*MAC_FIELD_NO; // round up to the next multiple of 64
+        int macField = (fixedMacField != null && !fixedMacField.isEmpty()) ? Integer.parseInt(fixedMacField) :
+            ((msg.getMaxField() - 1)/MAC_FIELD_NO + 1)*MAC_FIELD_NO; // round up to the next multiple of 64
+
         int macLength = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField).getLength();
         final String dummyMac = String.format("%0" + 2*macLength + "d", 0);
         msg.set(macField, dummyMac);
@@ -236,6 +239,9 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getMacKey() { return getPropertyAsString(MACKEY); }
     public void setMacKey(String macKey) { setProperty(MACKEY, macKey); }
+
+    public String getMacField() { return getPropertyAsString(MACFIELD); }
+    public void setMacField(String macField) { setProperty(MACFIELD, macField); }
 
     public String getPinKey() { return getPropertyAsString(PINKEY); }
     public void setPinKey(String pinKey) { setProperty(PINKEY, pinKey); }

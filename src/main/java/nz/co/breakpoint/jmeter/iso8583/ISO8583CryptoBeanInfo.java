@@ -28,7 +28,7 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, String.valueOf(ISO8583TestElement.KSN_FIELD_NO));
 
         createPropertyGroup("MAC", new String[]{
-             MACALGORITHM, MACKEY,
+             MACALGORITHM, MACKEY, MACFIELD,
         });
 
         p = property(MACALGORITHM);
@@ -37,6 +37,10 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(TAGS, macAlgorithms);
 
         p = property(MACKEY);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(MACFIELD);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 

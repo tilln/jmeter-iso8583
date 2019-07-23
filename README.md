@@ -117,7 +117,8 @@ can be used to enter binary values in that case.
 
 For tagged fields, the tag value is also used to distinguish binary fields.
 This works for well-known, standard EMV tags, but needs to be configured for proprietary tags.
-The JMeter property `jmeter.iso8583.binaryFieldTags`
+The JMeter property `jmeter.iso8583.binaryFieldTags` can be used to define a comma-separated list of 
+hexadecimal tag numbers. Note this will cause all fields with one of those tags to be interpreted as binary.
 
 
 #### Response Validation
@@ -126,7 +127,7 @@ The response code can be used to distinguish failed and successful samples
 (similar to JMeter's [HTTP Request](https://jmeter.apache.org/usermanual/component_reference.html#HTTP_Request)
 marking 4xx and 5xx responses as failures).
 - *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
-  The value 0 turn off the timeout, and should be used with care.
+  The value 0 turns off the timeout, and should be used with care.
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Code* (usually 00): Expected value for successful responses.
 
@@ -255,8 +256,8 @@ BDK ID `bbbbbb`, device ID `ddddd`, and transaction counter `ccccc`.
 - *MAC Algorithm*: Cipher algorithm name for EDE or CBC MAC calculation 
 (refer [BouncyCastle specification](https://www.bouncycastle.org/specifications.html))
 - *MAC Key (hex)*: Clear Triple-DES key (32 or 48 hex digits), usually from a key exchange.
-
-The MAC field will be the next multiple of 64 from teh last field in the message (e.g. 64, 128, 192).
+- *MAC Field Number*: Can be used to force the MAC in a specific field. If left blank,  
+the MAC field will be the next multiple of 64 from the last field in the message (e.g. 64, 128, 192).
 
 #### ARQC Generation
 
@@ -326,7 +327,7 @@ The following properties control the plugin behaviour:
    (default: none).
 - `jmeter.iso8583.ksnDescriptor`:
    Defines the [Key Serial Number Scheme](https://en.wikipedia.org/wiki/Derived_unique_key_per_transaction#Practical_Matters_(KSN_scheme)),
-   i.e. the length (in hex digits) of the KSN parts - BDK ID (or KSI), Device ID (or TRSM ID), transaction counter
+   i.e. the length (in hex digits) of the KSN parts: BDK ID (or KSI), Device ID (or TRSM ID), transaction counter
    (default: "6-5-5").
 
 Limitations
@@ -336,4 +337,4 @@ Packager logging is not currently implemented, so debugging Packager issues shou
 
 Troubleshooting
 ---------------
-Inspect the jMeter log, after increase the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.
+Inspect the JMeter log, after increase the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.

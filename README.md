@@ -332,8 +332,8 @@ The following properties control the plugin behaviour:
 Limitations
 -----------
 
-Some exceptions are currently only logged in the Q2 log but not in the JMeter log:
-- Packager exceptions in ChannelAdaptor on receive,
-- Configuration exceptions when deploying incorrect config (e.g. packager file not found)
+Packager logging is not currently implemented, so debugging Packager issues should be done outside of JMeter.
 
-Work-around: Increase log level `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`
+Troubleshooting
+---------------
+Inspect the jMeter log, after increase the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.

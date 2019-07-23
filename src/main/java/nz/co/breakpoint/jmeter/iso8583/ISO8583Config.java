@@ -81,9 +81,12 @@ public class ISO8583Config extends ConfigTestElement
     protected static transient Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
     protected static final String CONFIG_KEY = "configKey";
+    protected static final String Q2_LOGGER = "Q2";
 
-    protected String getQ2LoggerName() {
-        return log.isDebugEnabled() ? "Q2" : "";
+    static {
+        org.jpos.util.Logger logger = org.jpos.util.Logger.getLogger(Q2_LOGGER);
+        if (!logger.hasListeners())
+            logger.addListener(new Slf4jLogListener());
     }
 
     // Instantiate packager from config file
@@ -127,7 +130,7 @@ public class ISO8583Config extends ConfigTestElement
             .setAttribute("class", getFullChannelClassName())
             .setAttribute("packager", GenericPackager.class.getName())
             .setAttribute("header", getHeader())
-            .setAttribute("logger", getQ2LoggerName())
+            .setAttribute("logger", Q2_LOGGER)
             .addContent(new Element("property")
                 .setAttribute("name", "packager-config")
                 .setAttribute("value", getPackager()))
@@ -193,7 +196,7 @@ public class ISO8583Config extends ConfigTestElement
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
             .setAttribute("name", getChannelAdaptorName())
-            .setAttribute("logger", getQ2LoggerName())
+            .setAttribute("logger", Q2_LOGGER)
             .addContent(channelDescriptor)
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
@@ -202,7 +205,7 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
 
         ChannelAdaptor channelAdaptor = (ChannelAdaptor) deployAndStart(descriptor);
-        log.debug("Deployed ChannelAdaptor {}", channelAdaptor);
+        log.debug("Deployed ChannelAdaptor {}", channelAdaptor.getName());
         return channelAdaptor;
     }
 
@@ -221,7 +224,7 @@ public class ISO8583Config extends ConfigTestElement
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qserver.adoc
         Element descriptor = new Element("qserver")
             .setAttribute("name", getQServerName())
-            .setAttribute("logger", getQ2LoggerName())
+            .setAttribute("logger", Q2_LOGGER)
             .addContent(getChannelDescriptor(key))
             .addContent(new Element("attr")
                 .setAttribute("name", "port")
@@ -234,7 +237,7 @@ public class ISO8583Config extends ConfigTestElement
         addSSLConfig(descriptor);
 
         QServer qserver = (QServer) deployAndStart(descriptor);
-        log.debug("Deployed QServer {}", qserver);
+        log.debug("Deployed QServer {}", qserver.getName());
         return qserver;
     }
 
@@ -248,14 +251,14 @@ public class ISO8583Config extends ConfigTestElement
         // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc
         Element descriptor = new Element("qmux")
             .setAttribute("name", getMuxName())
-            .setAttribute("logger", getQ2LoggerName())
+            .setAttribute("logger", Q2_LOGGER)
             .addContent(new Element("in").addContent(key+"-receive"))
             .addContent(new Element("out").addContent(key+"-send"))
             .addContent(new Element("unhandled").addContent(key+"-unhandled"))
             .addContent(new Element("ready").addContent(key+".ready"));
 
         QMUX mux = (QMUX) deployAndStart(descriptor);
-        log.debug("Deployed QMUX {}", mux);
+        log.debug("Deployed QMUX {}", mux.getName());
         return mux;
     }
 
@@ -264,8 +267,7 @@ public class ISO8583Config extends ConfigTestElement
     // but using more accessible QFactory methods:
     protected Object deployAndStart(Element descriptor) {
         if (log.isDebugEnabled()) {
-            log.debug("Deploying {}\n{}", descriptor.getName(),
-                new XMLOutputter().outputString(descriptor));
+            log.debug("Deploying {}", new XMLOutputter().outputString(descriptor));
         }
         QFactory qFactory = q2.getFactory();
         try {
@@ -306,32 +308,25 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    protected void startQ2() {
+    protected synchronized void startQ2() {
         q2 = Q2.getQ2();
         if (q2 == null) {
             log.debug("Creating Q2");
-            q2 = new Q2(JMeterUtils.getPropDefault(Q2_DEPLOY_DIR, Q2.DEFAULT_DEPLOY_DIR));
-            if (!log.isDebugEnabled()) {
-                q2.getLog().setLogger(null); // quieten it TODO redirect QBean exceptions to JMeter logger
-            }
+            q2 = new Q2(new String[]{
+                "-d", JMeterUtils.getPropDefault(Q2_DEPLOY_DIR, Q2.DEFAULT_DEPLOY_DIR),
+                "-no-scan", "-no-dynamic" // don't scan for new descriptor or jar files
+            });
         }
-        if (q2.running()) {
-            log.debug("Q2 running");
-        } else {
-            log.info("Starting Q2");
+        if (!q2.running()) {
             q2.start();
-            log.debug("Started Q2");
-            boolean ready = q2.ready(JMeterUtils.getPropDefault(Q2_STARTUP_TIMEOUT, 2000));
-            log.debug("Q2 ready: {}", ready);
-            if (!ready) {
-                log.error("Failed to start up Q2");
+            if (!q2.ready(JMeterUtils.getPropDefault(Q2_STARTUP_TIMEOUT, 2000))) {
+                log.error("Q2 startup timeout exceeded");
             }
         }
     }
 
-    protected void stopQ2() {
+    protected synchronized void stopQ2() {
         if (q2 != null && q2.running()) {
-            log.debug("Shutting down Q2");
             q2.stop();
         }
     }
@@ -390,14 +385,10 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     @Override
-    public void testStarted(String s) {
-        testStarted();
-    }
+    public void testStarted(String s) { testStarted(); }
 
     @Override
-    public void testEnded(String s) {
-        testEnded();
-    }
+    public void testEnded(String s) { testEnded(); }
 
     // Accessors for mapping to TestBean GUI elements...
     public String getClassname() { return getPropertyAsString(CLASSNAME); }

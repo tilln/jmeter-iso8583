@@ -184,14 +184,4 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         assertEquals(clearPinBlock.length(), pinBlock.length());
         assertEquals("C0F224AD1647A8EB", pinBlock);
     }
-
-    @Test
-    public void shouldCalculateCVV() {
-        String pan = "4444333322221111", exp = "9911";
-        Key cvk = new SecretKeySpec(ISOUtil.hex2byte(DEFAULT_3DES_KEY), "DESede");
-        assertEquals("662", instance.securityModule.calculateCVV(pan, cvk, exp, "101")); // CVV
-        assertEquals("114", instance.securityModule.calculateCVV(pan, cvk, exp, "000")); // CVV2
-        assertEquals("163", instance.securityModule.calculateCVV(pan, cvk, exp, "999")); // iCVV
-
-    }
 }

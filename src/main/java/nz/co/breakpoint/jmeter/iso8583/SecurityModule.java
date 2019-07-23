@@ -155,4 +155,26 @@ public class SecurityModule extends JCESecurityModule {
         }
         return "";
     }
+
+    public String calculateKeyCheckValue(Key clearKey) {
+        try {
+            Method m = getClass().getSuperclass().getDeclaredMethod("calculateKeyCheckValue", Key.class);
+            m.setAccessible(true);
+            byte[] kcv = (byte[]) m.invoke(this, clearKey);
+            return ISOUtil.byte2hex(kcv);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            log.error("Failed to invoke calculateKeyCheckValue", e);
+        }
+        return "";
+    }
+
+    public String encryptDESKey(Key clearKey, Key encryptingKey) {
+        try {
+            byte[] encryptedKey = getJceHandler().encryptDESKey((short)(clearKey.getEncoded().length*8), clearKey, encryptingKey);
+            return ISOUtil.byte2hex(encryptedKey);
+        } catch (JCEHandlerException e) {
+            log.error("Failed to encrypt DES key {}", e.toString(), e);
+        }
+        return "";
+    }
 }

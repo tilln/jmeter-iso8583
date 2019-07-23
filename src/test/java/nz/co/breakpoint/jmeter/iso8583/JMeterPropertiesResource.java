@@ -13,6 +13,7 @@ public class JMeterPropertiesResource extends ExternalResource {
             File props = File.createTempFile("jmeter-iso8583-test", ".properties");
             props.deleteOnExit();
             JMeterUtils.loadJMeterProperties(props.getAbsolutePath());
+            JMeterUtils.initLocale();
         }
         catch (IOException e) {
             System.out.println("Failed to create JMeter properties file: "+e.getMessage());

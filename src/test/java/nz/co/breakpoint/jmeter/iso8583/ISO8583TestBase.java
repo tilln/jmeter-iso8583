@@ -63,10 +63,10 @@ public class ISO8583TestBase {
         return config;
     }
 
-    public static ISO8583Template getDefaultTestTemplate() {
-        ISO8583Template template = new ISO8583Template();
-        template.addField(new MessageField("11", "STAN"));
-        return template;
+    public static ISO8583Component getDefaultMessageComponent() {
+        ISO8583Component component = new ISO8583Component();
+        component.addField(new MessageField("11", "STAN"));
+        return component;
     }
 
     public static Collection<MessageField> asMessageFields(ISOMsg msg) {

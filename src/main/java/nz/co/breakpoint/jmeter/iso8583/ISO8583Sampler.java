@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Sends an ISOMsg to a jPOS QMUX provided by an ISO8583Config element, and receives a response.
- * Message fields can be specified in the associated TestBean GUI, or via ISO8583Template config elements
+ * Message fields can be specified in the associated TestBean GUI, or via ISO8583Component config elements
  * in scope. Preprocessors may also modify fields.
  * Sampler lifecycle:
  * <pre>
@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
                             this.setFields => fields from sampler
                             this.setHeader
                     this.addTestElement
-                        this.template.merge => fields from other template(s)
-                            this.template.addField
+                        this.component.merge => fields from other component(s)
+                            this.component.addField
             JMeterThread.runPreProcessors
                 ISO8583Crypto.process
                     this.getRequest
@@ -65,7 +65,7 @@ public class ISO8583Sampler extends AbstractSampler
 
     // These can't be TestElementProperties as they would be saved in the Test Plan:
     protected ISO8583Config config = new ISO8583Config();
-    protected ISO8583Template template = new ISO8583Template();
+    protected ISO8583Component component = new ISO8583Component();
 
     protected transient MessageBuilder builder = new MessageBuilder(); // reusable between samples
     protected transient ISOMsg response; // for PostProcessors
@@ -88,20 +88,20 @@ public class ISO8583Sampler extends AbstractSampler
             config.addConfigElement((ISO8583Config) el);
             // Make sure all messages have a packager available (to interpret String values correctly):
             builder.packager(config.createPackager());
-        } else if (el instanceof ISO8583Template) {
-            log.debug("Applying template '{}'", el.getName());
-            // Add (new) message fields from any ISO8583Template elements in scope to this sampler's fields:
-            template.merge((ISO8583Template) el);
+        } else if (el instanceof ISO8583Component) {
+            log.debug("Applying component '{}'", el.getName());
+            // Add (new) message fields from any ISO8583Component elements in scope to this sampler's fields:
+            component.merge((ISO8583Component) el);
         } else {
             super.addTestElement(el);
         }
     }
 
     // Without preparing the sampler before Preprocessors run they wouldn't see the
-    // sampler's own template fields.
+    // sampler's own component fields.
     // This gets called first thing in TestCompiler.configureWithConfigElements,
     // so we can sneak in the sampler's own fields to be applied (as a pseudo-config element)
-    // before the surrounding ISO8583Template elements.
+    // before the surrounding ISO8583Component elements.
     @Override
     public void clearTestElementChildren() {
         TestBeanHelper.prepare(this); // calls all property setters
@@ -114,14 +114,14 @@ public class ISO8583Sampler extends AbstractSampler
     public void setRunningVersion(boolean runningVersion) {
         super.setRunningVersion(runningVersion);
         config.setRunningVersion(runningVersion);
-        template.setRunningVersion(runningVersion);
+        component.setRunningVersion(runningVersion);
     }
 
     @Override
     public void recoverRunningVersion() {
         super.recoverRunningVersion();
         config.recoverRunningVersion();
-        template.recoverRunningVersion();
+        component.recoverRunningVersion();
         prepared = false; // make sure fields get re-applied next time the sampler gets prepared
     }
 
@@ -211,7 +211,7 @@ public class ISO8583Sampler extends AbstractSampler
     public ISOMsg getResponse() { return response; }
 
     public void addField(String id, String value) { addField(id, value, ""); }
-    public void addField(String id, String value, String tag) { template.addField(new MessageField(id, value, tag)); }
+    public void addField(String id, String value, String tag) { component.addField(new MessageField(id, value, tag)); }
 
     public String getHeader() { return getPropertyAsString(HEADER); }
     public void setHeader(String header) { if (!prepared) setProperty(HEADER, header); }
@@ -219,8 +219,8 @@ public class ISO8583Sampler extends AbstractSampler
     public String getTrailer() { return getPropertyAsString(TRAILER); }
     public void setTrailer(String trailer) { if (!prepared) setProperty(TRAILER, trailer); }
 
-    public Collection<MessageField> getFields() { return template.getFields(); }
-    public void setFields(Collection<MessageField> fields) { if (!prepared) template.setFields(fields); }
+    public Collection<MessageField> getFields() { return component.getFields(); }
+    public void setFields(Collection<MessageField> fields) { if (!prepared) component.setFields(fields); }
 
     public int getTimeout() { return getPropertyAsInt(TIMEOUT); }
     public void setTimeout(int timeout) { setProperty(new IntegerProperty(TIMEOUT, timeout)); }

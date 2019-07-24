@@ -3,6 +3,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 import java.beans.PropertyDescriptor;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583Config.*;
 import org.apache.jmeter.testbeans.gui.FileEditor;
+import org.apache.jmeter.testbeans.gui.PasswordEditor;
 import org.apache.jmeter.testbeans.gui.TableEditor;
 
 /** Describes the ISO8583Config GUI.
@@ -59,10 +60,12 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "");
 
         p = property(STOREPASSWORD);
+        p.setPropertyEditorClass(PasswordEditor.class);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
         p = property(KEYPASSWORD);
+        p.setPropertyEditorClass(PasswordEditor.class);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
     }

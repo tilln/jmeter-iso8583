@@ -38,17 +38,17 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldMergeNestedTemplates() {
+    public void shouldMergeNestedComponents() {
         instance.addTestElement(getDefaultTestConfig());
         instance.addField("0", "0800");
         instance.addField("11", "ALREADY_THERE");
 
-        ISO8583Template inner = new ISO8583Template();
+        ISO8583Component inner = new ISO8583Component();
         inner.setFields(asMessageFields(
             new MessageField("0", "0000"),
             new MessageField("41", "THIS")
         ));
-        ISO8583Template outer = new ISO8583Template();
+        ISO8583Component outer = new ISO8583Component();
         outer.setFields(asMessageFields(
             new MessageField("11", "IGNORED"),
             new MessageField("41", "NOT_THIS")

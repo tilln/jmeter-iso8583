@@ -4,18 +4,18 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ISO8583TemplateTest extends ISO8583TestBase {
+public class ISO8583ComponentTest extends ISO8583TestBase {
 
-    ISO8583Template instance = new ISO8583Template();
+    ISO8583Component instance = new ISO8583Component();
 
     @Test
-    public void shouldMergeOtherTemplates() {
+    public void shouldMergeOtherComponents() {
         instance.setFields(asMessageFields(
             new MessageField("7", "inner-only"),
             new MessageField("41", "inner")
         ));
 
-        ISO8583Template other = new ISO8583Template();
+        ISO8583Component other = new ISO8583Component();
         other.setFields(asMessageFields(
             new MessageField("11", "outer-only"),
             new MessageField("41", "outer")

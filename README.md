@@ -11,7 +11,7 @@ based on the excellent [jPOS framework](http://jpos.org/). Includes the followin
 
 - [*ISO8583 Sampler*](#sampler) for defining and sending messages,
 - [*ISO8583 Config*](#config) for integration with the system under test,
-- [*ISO8583 Message Template*](#template) (optional) for sharing common message fields,
+- [*ISO8583 Message Component*](#component) (optional) for sharing common message fields,
 - [*ISO8583 Crypto PreProcessor*](#crypto) (optional) for encryption operations of certain message elements (PIN Block, MAC, ARQC).
 
 #### Prerequisites
@@ -192,9 +192,9 @@ Provided a matching packager configuration like this:
 ```
 
 
-<h3 id="template">ISO8583 Template</h3>
+<h3 id="component">ISO8583 Message Component</h3>
 
-![ISO8583 Template](docs/template.png)
+![ISO8583 Message Component](docs/component.png)
 
 This (optional) Configuration element may be used to define fields in the same way as for the *ISO8583 Sampler*.
 However, its fields will be applied to all samplers in scope, so it can be used for common data elements like dates and times.
@@ -208,10 +208,10 @@ However, its fields will be applied to all samplers in scope, so it can be used 
 |16|<code>${__time(MMdd,)}</code>| |Currency conversion date|
 |17|<code>${__time(MMdd,)}</code>| |Capture date|
 
-If any particular field number is present in the sampler as well as the template, the one in the sampler takes precedence.
+If any particular field number is present in the sampler as well as the component, the one in the sampler takes precedence.
 
-If a sampler has more than one template in its scope, their fields will all be merged into the sampler, 
-unless a field is already present in the sampler *or* a template in a scope closer to the sampler.
+If a sampler has more than one component in its scope, their fields will all be merged into the sampler, 
+unless a field is already present in the sampler *or* a component in a scope closer to the sampler.
 
 In other words, inner fields take precedence over outer ones, 
 with the sampler's fields themselves being the innermost ones.
@@ -290,15 +290,15 @@ Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso858
 
 1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.0-SNAPSHOT/jmeter-iso8583-1.0-SNAPSHOT.jar) into JMeter's `lib/ext` directory.
 2. Copy the following dependencies into JMeter's `lib` directory:
-    * [org.jpos / jpos](https://search.maven.org/classic/remotecontent?filepath=org/jpos/jpos/2.1.3/jpos-2.1.3.jar)
-    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/classic/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.62/bcprov-jdk15on-1.62.jar)
-    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/classic/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.62/bcpg-jdk15on-1.62.jar)
-    * [org.jdom / jdom2](https://search.maven.org/classic/remotecontent?filepath=org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar)
-    * [org.osgi / org.osgi.core](https://search.maven.org/classic/remotecontent?filepath=org/osgi/org.osgi.core/6.0.0/org.osgi.core-6.0.0.jar)
-    * [commons-cli / commons-cli](https://search.maven.org/classic/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)
-    * [org.yaml / snakeyaml](https://search.maven.org/classic/remotecontent?filepath=org/yaml/snakeyaml/1.24/snakeyaml-1.24.jar)
-    * [org.hdrhistogram / HdrHistogram](https://search.maven.org/classic/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.11/HdrHistogram-2.1.11.jar)
-    * [org.javatuples / javatuples](https://search.maven.org/classic/remotecontent?filepath=org/javatuples/javatuples/1.2/javatuples-1.2.jar)
+    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.3/jpos-2.1.3.jar)
+    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.62/bcprov-jdk15on-1.62.jar)
+    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.62/bcpg-jdk15on-1.62.jar)
+    * [org.jdom / jdom2](https://search.maven.org/remotecontent?filepath=org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar)
+    * [org.osgi / org.osgi.core](https://search.maven.org/remotecontent?filepath=org/osgi/org.osgi.core/6.0.0/org.osgi.core-6.0.0.jar)
+    * [commons-cli / commons-cli](https://search.maven.org/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)
+    * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.24/snakeyaml-1.24.jar)
+    * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.11/HdrHistogram-2.1.11.jar)
+    * [org.javatuples / javatuples](https://search.maven.org/remotecontent?filepath=org/javatuples/javatuples/1.2/javatuples-1.2.jar)
 3. Restart JMeter.
 
 

@@ -14,20 +14,20 @@ import org.slf4j.LoggerFactory;
  * Only fields that don't exist will be merged into every ISO8585Sampler in scope.
  * Inner fields take precedence over outer ones.
  */
-public class ISO8583Template extends ConfigTestElement
+public class ISO8583Component extends ConfigTestElement
         implements ISO8583TestElement, TestBean, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final Logger log = LoggerFactory.getLogger(ISO8583Template.class);
+    private static final Logger log = LoggerFactory.getLogger(ISO8583Component.class);
 
     public static final String FIELDS = "fields";
 
-    public ISO8583Template() {
+    public ISO8583Component() {
         setProperty(new CollectionProperty(FIELDS, new ArrayList<>()));
     }
 
-    public void merge(ISO8583Template other) {
+    public void merge(ISO8583Component other) {
         if (other != null) {
             log.debug("Merging {}", other.getFieldsAsProperty());
             other.getFields().forEach(f -> {

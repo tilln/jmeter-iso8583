@@ -26,7 +26,7 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
     @Test
     public void shouldReceiveResponse() {
         instance.addTestElement(config);
-        instance.addTestElement(getDefaultTestTemplate());
+        instance.addTestElement(getDefaultMessageComponent());
         ISOMsg msg = getDefaultTestMessage();
         instance.setFields(asMessageFields(msg));
         instance.addField("48.1", "1122334455667788", "9f26");

@@ -8,7 +8,7 @@ import org.jpos.tlv.ISOTaggedField;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.BINARY_FIELD_TAGS;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.TAG_SEPARATOR_REGEX;
 
-/** Builds an ISOMsg from elements configured in the JMeter elements.
+/** Builds an ISOMsg from elements configured in the JMeter script.
  * Interprets the field content as binary or non-binary depending on the packager configuration.
  * Must have an ISOBasePackager assigned to be able to find the fields' classes.
  */

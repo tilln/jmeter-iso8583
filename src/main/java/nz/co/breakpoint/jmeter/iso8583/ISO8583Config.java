@@ -29,16 +29,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** This class is effectively a wrapper for the jPOS Q2 container and associated QBeans configuration.
- * It manages either set of 3 components (depending on client or server mode):
- * - ChannelAdaptor, Channel and QMUX
- * - QServer, Channel and QMUX
- * While normally those would be configured by placing corresponding XML files into a <deploy> folder,
+ * It manages either set of 3 components (depending on client or server mode):<ul>
+ *   <li>ChannelAdaptor, Channel and QMUX</li>
+ *   <li>QServer, Channel and QMUX</li>
+ * </ul>
+ * While normally those would be configured by placing corresponding XML files into a <i>deploy</i> folder,
  * here it is done dynamically via transforming configuration properties from the JMeter Test Plan
  * into in-memory deployment descriptors (JDOM Elements).
+ *
  * These descriptors are then used to create and deploy QBeans at the test start and destroy them at the end.
  * Advanced, Channel-dependent configuration properties can be specified via name/value pairs.
- * For example, <srcid> and <dstid> for VAPChannel's Base1Header
- *   https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237
+ *
+ * For example, <i>srcid</i> and <i>dstid</i> for
+ * <a href="https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237">
+ * VAPChannel's Base1Header</a><br />
  * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
  */
 public class ISO8583Config extends ConfigTestElement

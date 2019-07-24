@@ -16,34 +16,34 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Sends an ISOMsg to a jPOS QMUX provided by an ISO8583Config element, and receives a response.
- * Message fields can be specified in the associated TestBean GUI, or via ISO8583Component config elements
- * in scope. Preprocessors may also modify fields.
+/** Sends an ISOMsg to a jPOS QMUX provided by an {@link ISO8583Config} element, and receives a response.<br />
+ * Message fields can be specified in the associated TestBean GUI, or via {@link ISO8583Component} config elements
+ * in scope. Preprocessors may also modify fields.<br />
  * Sampler lifecycle:
  * <pre>
-        JMeterThread.executeSamplePackage
-            TestCompiler.configureSampler
-                TestCompiler.configureWithConfigElements
-                    this.clearTestElementChildren
-                        TestBeanHelper.prepare => set all Bean properties
-                            this.setFields => fields from sampler
-                            this.setHeader
-                    this.addTestElement
-                        this.component.merge => fields from other component(s)
-                            this.component.addField
-            JMeterThread.runPreProcessors
-                ISO8583Crypto.process
-                    this.getRequest
-                    this.addField
-            JMeterThread.delay
-            JMeterThread.doSampling
-                TestBeanHelper.prepare => avoid overwriting fields
-                    this.setFields
-                    this.setHeader
-                this.sample
-                    this.getRequest
+    JMeterThread.executeSamplePackage
+        TestCompiler.configureSampler
+            TestCompiler.configureWithConfigElements
+                this.clearTestElementChildren
+                    TestBeanHelper.prepare : set all Bean properties
+                        this.setFields : fields from sampler
+                        this.setHeader
+                this.addTestElement
+                    this.component.merge : fields from other component(s)
+                        this.component.addField
+        JMeterThread.runPreProcessors
+            ISO8583Crypto.process
+                this.getRequest
+                this.addField
+        JMeterThread.delay
+        JMeterThread.doSampling
+            TestBeanHelper.prepare : avoid overwriting fields
+                this.setFields
+                this.setHeader
+            this.sample
+                this.getRequest
  </pre>
- * The ISOMsg gets built in getRequest() whenever a Preprocessor needs to access the message.
+ * The ISOMsg gets built in {@link #getRequest()} whenever a Preprocessor needs to access the message.
  * This means it will be rebuilt from Properties, therefore Preprocessor modifications of the message itself won't
  * persist. Instead, the sampler's properties need to be modified.
  */

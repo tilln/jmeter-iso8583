@@ -22,6 +22,7 @@ import org.jpos.q2.Q2;
 import org.jpos.q2.QBeanSupport;
 import org.jpos.q2.QFactory;
 import org.jpos.q2.iso.ChannelAdaptor;
+import org.jpos.q2.iso.OneShotChannelAdaptor;
 import org.jpos.q2.iso.QMUX;
 import org.jpos.q2.iso.QServer;
 import org.jpos.util.NameRegistrar;
@@ -62,7 +63,8 @@ public class ISO8583Config extends ConfigTestElement
         CONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
-        KEYPASSWORD = "keyPassword";
+        KEYPASSWORD = "keyPassword",
+        REUSECONNECTION = "reuseCONNECTION";
 
     // Lookup map of Channel classes that come with jPOS (for GUI dropdown):
     static final Map<String, String> channelClasses = new HashMap<>();
@@ -78,9 +80,19 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
+    // Lookup map of reuse connection for jpos jPOS (for GUI dropdown):
+    static final Map<String, String> reuseConnection = new HashMap<>();
+    static {
+        reuseConnection.put("yes", "yes");
+        reuseConnection.put("no", "no");
+    }
+
     // For GUI...
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
+
+    static String getDefaultUseReconnect() { return getUseReconnect()[0]; }
+    static String[] getUseReconnect() { return reuseConnection.keySet().toArray(new String[]{}); }
 
     protected static transient Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
@@ -209,6 +221,41 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
 
         ChannelAdaptor channelAdaptor = (ChannelAdaptor) deployAndStart(descriptor);
+        log.debug("Deployed ChannelAdaptor {}", channelAdaptor.getName());
+        return channelAdaptor;
+    }
+
+
+    // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
+    protected OneShotChannelAdaptor startOneShotChannelAdaptor() {
+        final String key = getPropertyAsString(CONFIG_KEY);
+        Element channelDescriptor = getChannelDescriptor(key);
+        if (channelDescriptor == null) return null;
+        addSSLConfig(channelDescriptor);
+
+        final String port = getPort(), host = getHost();
+        if (host == null || host.isEmpty()) {
+            log.error("Hostname undefined, cannot start ChannelAdaptor");
+            return null;
+        }
+        if (port == null || port.isEmpty()) {
+            log.error("Port undefined, cannot start ChannelAdaptor");
+            return null;
+        }
+        // Build QBean deployment descriptor in memory
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
+        Element descriptor = new Element("channel-adaptor")
+            .setAttribute("name", getChannelAdaptorName())
+            .setAttribute("logger", Q2_LOGGER)
+            .setAttribute("class", "org.jpos.q2.iso.OneShotChannelAdaptor")
+            .addContent(channelDescriptor)
+            .addContent(new Element("in").addContent(key+"-send"))
+            .addContent(new Element("out").addContent(key+"-receive"))
+            .addContent(new Element("reconnect-delay").addContent(
+                JMeterUtils.getPropDefault(CHANNEL_RECONNECT_DELAY, "10000")))
+            .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
+
+        OneShotChannelAdaptor channelAdaptor = (OneShotChannelAdaptor) deployAndStart(descriptor);
         log.debug("Deployed ChannelAdaptor {}", channelAdaptor.getName());
         return channelAdaptor;
     }
@@ -370,7 +417,11 @@ public class ISO8583Config extends ConfigTestElement
                 }
             }
         } else {
-            startChannelAdaptor();
+            if(getReuseCONNECTION().equalsIgnoreCase("no")) {
+                startOneShotChannelAdaptor();
+            } else {
+                startChannelAdaptor();
+            }
         }
         startMux();
     }
@@ -433,4 +484,7 @@ public class ISO8583Config extends ConfigTestElement
 
     public String getKeyPassword() { return getPropertyAsString(KEYPASSWORD); }
     public void setKeyPassword(String keyPassword) { setProperty(new StringProperty(KEYPASSWORD, keyPassword)); }
+
+    public String getReuseCONNECTION() { return getPropertyAsString(REUSECONNECTION); }
+    public void setReuseCONNECTION(String reuseConnection) { setProperty(new StringProperty(REUSECONNECTION, reuseConnection)); }
 }

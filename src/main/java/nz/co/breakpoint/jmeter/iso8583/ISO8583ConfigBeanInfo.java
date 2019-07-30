@@ -17,19 +17,13 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT, CONFIG, REUSECONNECTION,
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, CONFIG,
         });
 
         p = property(CLASSNAME);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, getDefaultChannelClass());
         p.setValue(TAGS, getChannelClasses());
-
-        p = property(REUSECONNECTION);
-        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
-        p.setValue(NOT_OTHER, Boolean.FALSE);
-        p.setValue(DEFAULT, getDefaultUseReconnect());
-        p.setValue(TAGS, getUseReconnect());
 
         p = property(PACKAGER);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
@@ -47,6 +41,10 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p = property(PORT);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        p = property(REUSECONNECTION);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, Boolean.TRUE);
 
         p = property(CONFIG);
         p.setPropertyEditorClass(TableEditor.class);

@@ -9,6 +9,7 @@ import javax.management.*;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.property.BooleanProperty;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
@@ -21,10 +22,7 @@ import org.jpos.iso.packager.GenericPackager;
 import org.jpos.q2.Q2;
 import org.jpos.q2.QBeanSupport;
 import org.jpos.q2.QFactory;
-import org.jpos.q2.iso.ChannelAdaptor;
-import org.jpos.q2.iso.OneShotChannelAdaptor;
-import org.jpos.q2.iso.QMUX;
-import org.jpos.q2.iso.QServer;
+import org.jpos.q2.iso.*;
 import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +62,7 @@ public class ISO8583Config extends ConfigTestElement
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
         KEYPASSWORD = "keyPassword",
-        REUSECONNECTION = "reuseCONNECTION";
+        REUSECONNECTION = "reuseConnection";
 
     // Lookup map of Channel classes that come with jPOS (for GUI dropdown):
     static final Map<String, String> channelClasses = new HashMap<>();
@@ -80,19 +78,9 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    // Lookup map of reuse connection for jpos jPOS (for GUI dropdown):
-    static final Map<String, String> reuseConnection = new HashMap<>();
-    static {
-        reuseConnection.put("yes", "yes");
-        reuseConnection.put("no", "no");
-    }
-
     // For GUI...
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
-
-    static String getDefaultUseReconnect() { return getUseReconnect()[0]; }
-    static String[] getUseReconnect() { return reuseConnection.keySet().toArray(new String[]{}); }
 
     protected static transient Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
@@ -243,11 +231,11 @@ public class ISO8583Config extends ConfigTestElement
             return null;
         }
         // Build QBean deployment descriptor in memory
-        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
-        Element descriptor = new Element("channel-adaptor")
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/one_shot_channel_adaptor.adoc
+        Element descriptor = new Element("qbean")
             .setAttribute("name", getChannelAdaptorName())
             .setAttribute("logger", Q2_LOGGER)
-            .setAttribute("class", "org.jpos.q2.iso.OneShotChannelAdaptor")
+            .setAttribute("class", OneShotChannelAdaptor.class.getName())
             .addContent(channelDescriptor)
             .addContent(new Element("in").addContent(key+"-send"))
             .addContent(new Element("out").addContent(key+"-receive"))
@@ -417,7 +405,7 @@ public class ISO8583Config extends ConfigTestElement
                 }
             }
         } else {
-            if(getReuseCONNECTION().equalsIgnoreCase("no")) {
+            if(isReuseConnection()) {
                 startOneShotChannelAdaptor();
             } else {
                 startChannelAdaptor();
@@ -485,6 +473,6 @@ public class ISO8583Config extends ConfigTestElement
     public String getKeyPassword() { return getPropertyAsString(KEYPASSWORD); }
     public void setKeyPassword(String keyPassword) { setProperty(new StringProperty(KEYPASSWORD, keyPassword)); }
 
-    public String getReuseCONNECTION() { return getPropertyAsString(REUSECONNECTION); }
-    public void setReuseCONNECTION(String reuseConnection) { setProperty(new StringProperty(REUSECONNECTION, reuseConnection)); }
+    public boolean isReuseConnection() { return getPropertyAsBoolean(REUSECONNECTION); }
+    public void setReuseConnection(boolean reuseConnection) { setProperty(new BooleanProperty(REUSECONNECTION, reuseConnection)); }
 }

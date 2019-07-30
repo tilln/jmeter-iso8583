@@ -4,7 +4,7 @@
     <groupId>nz.co.breakpoint</groupId>
     <artifactId>jmeter-iso8583</artifactId>
     <packaging>jar</packaging>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <name>${project.artifactId}</name>
 
     <licenses>
@@ -31,6 +31,7 @@
             <groupId>org.apache.jmeter</groupId>
             <artifactId>ApacheJMeter_core</artifactId>
             <version>[3.1,)</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jpos</groupId>

@@ -165,6 +165,7 @@ public class ISO8583Sampler extends AbstractSampler
             return result;
         }
         result.setSuccessful(true); // at least we received a response, so start off as success
+        result.setResponseMessageOK();
 
         String rcField = getResponseCodeField();
         if (rcField != null && !rcField.isEmpty()) {
@@ -173,14 +174,15 @@ public class ISO8583Sampler extends AbstractSampler
 
             String success = getSuccessResponseCode();
             if (success != null && !success.isEmpty()) {
-                result.setSuccessful(success.equals(rc));
+                if (!success.equals(rc)) {
+                    result.setSuccessful(false);
+                    result.setResponseMessage("Unexpected response code");
+                }
             }
         }
 
         // Response details...
         result.setResponseData(MessagePrinter.asString(response, true), null);
-        result.setResponseMessage(response.toString());
-
         try {
             byte[] bytes = response.pack(), header = response.getHeader(), trailer = response.getTrailer();
             log.debug("Packed response '{}'", ISOUtil.byte2hex(bytes));

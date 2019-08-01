@@ -39,4 +39,34 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
         assertEquals("1122334455667788", response.getString("48.1"));
     }
 
+    @Test
+    public void shouldAllowFireAndForget() {
+        instance.addTestElement(config);
+        instance.addTestElement(getDefaultMessageComponent());
+        instance.setFields(asMessageFields(getDefaultTestMessage()));
+        instance.setTimeout(-1); // indicates fire-and-forget
+        SampleResult res = instance.sample(new Entry());
+        assertNotNull(res);
+        assertTrue(res.isSuccessful());
+        assertTrue(res.getResponseDataAsString().isEmpty());
+        assertEquals(0, res.getBytesAsLong());
+        assertEquals("No response", res.getResponseMessage());
+        assertNull(instance.getResponse());
+    }
+
+    @Test
+    public void shouldFailOnTimeout() {
+        instance.addTestElement(config);
+        instance.addTestElement(getDefaultMessageComponent());
+        instance.setFields(asMessageFields(getDefaultTestMessage()));
+        instance.addField("35", ""); // simulate delay
+        instance.setTimeout(500);
+        SampleResult res = instance.sample(new Entry());
+        assertNotNull(res);
+        assertFalse(res.isSuccessful());
+        assertTrue(res.getResponseDataAsString().isEmpty());
+        assertEquals(0, res.getBytesAsLong());
+        assertEquals("Timeout", res.getResponseMessage());
+        assertNull(instance.getResponse());
+    }
 }

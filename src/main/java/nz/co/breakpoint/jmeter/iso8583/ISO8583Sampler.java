@@ -161,7 +161,12 @@ public class ISO8583Sampler extends AbstractSampler
 
         // Response validation...
         if (response == null) {
-            result.setResponseMessage("Timeout");
+            if (getTimeout() >= 0) {
+                result.setResponseMessage("Timeout");
+            } else { // fire-and-forget
+                result.setResponseMessage("No response");
+                result.setSuccessful(true);
+            }
             return result;
         }
         result.setSuccessful(true); // at least we received a response, so start off as success
@@ -196,7 +201,12 @@ public class ISO8583Sampler extends AbstractSampler
 
     protected ISOMsg sendRequest(ISOMsg request) throws ISOException, NameRegistrar.NotFoundException {
         MUX mux = QMUX.getMUX(config.getMuxName());
-        return mux.request(request, getTimeout());
+        if (getTimeout() >= 0) {
+            return mux.request(request, getTimeout());
+        } else {
+            mux.request(request, 0, (response, handback) -> {}, null); // fire-and-forget
+            return null;
+        }
     }
 
     protected ISOMsg buildRequest() {

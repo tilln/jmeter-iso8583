@@ -10,30 +10,37 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
     @ClassRule
     public static Q2ServerResource q2server = new Q2ServerResource();
 
-    ISO8583Sampler instance = new ISO8583Sampler();
+    ISO8583Sampler instance;
     static ISO8583Config config = getDefaultTestConfig();
 
     @BeforeClass
-    public static void setup() {
+    public static void setupClass() {
         config.testStarted(); // starts up Q2
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void tearDownClass() {
         config.testEnded();
+    }
+
+    @Before
+    public void setup() {
+        instance = new ISO8583Sampler();
+        instance.addTestElement(config);
+        instance.addTestElement(getDefaultMessageComponent());
+        instance.setFields(asMessageFields(getDefaultTestMessage()));
     }
 
     @Test
     public void shouldReceiveResponse() {
-        instance.addTestElement(config);
-        instance.addTestElement(getDefaultMessageComponent());
-        ISOMsg msg = getDefaultTestMessage();
+        ISOMsg msg = instance.getRequest();
         instance.setFields(asMessageFields(msg));
         instance.addField("48.1", "1122334455667788", "9f26");
         instance.setTimeout(5000);
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);
         assertFalse(res.getResponseDataAsString().isEmpty());
+        assertEquals("OK", res.getResponseMessage());
         ISOMsg response = instance.getResponse();
         assertEquals(msg.getString(11), response.getString(11));
         assertEquals("1122334455667788", response.getString("48.1"));
@@ -41,9 +48,6 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
 
     @Test
     public void shouldAllowFireAndForget() {
-        instance.addTestElement(config);
-        instance.addTestElement(getDefaultMessageComponent());
-        instance.setFields(asMessageFields(getDefaultTestMessage()));
         instance.setTimeout(-1); // indicates fire-and-forget
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);
@@ -56,9 +60,6 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
 
     @Test
     public void shouldFailOnTimeout() {
-        instance.addTestElement(config);
-        instance.addTestElement(getDefaultMessageComponent());
-        instance.setFields(asMessageFields(getDefaultTestMessage()));
         instance.addField("35", ""); // simulate delay
         instance.setTimeout(500);
         SampleResult res = instance.sample(new Entry());

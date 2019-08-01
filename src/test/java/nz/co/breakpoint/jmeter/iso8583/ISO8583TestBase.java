@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
@@ -65,7 +66,7 @@ public class ISO8583TestBase {
 
     public static ISO8583Component getDefaultMessageComponent() {
         ISO8583Component component = new ISO8583Component();
-        component.addField(new MessageField("11", "STAN"));
+        component.addField(new MessageField("11", String.format("%06d", new Random().nextInt(1000000))));
         return component;
     }
 

@@ -2,10 +2,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Random;
+import java.util.*;
 
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
@@ -66,7 +63,7 @@ public class ISO8583TestBase {
 
     public static ISO8583Component getDefaultMessageComponent() {
         ISO8583Component component = new ISO8583Component();
-        component.addField(new MessageField("11", String.format("%06d", new Random().nextInt(1000000))));
+        component.addField(new MessageField("11", "STAN"));
         return component;
     }
 
@@ -88,14 +85,18 @@ public class ISO8583TestBase {
 
     public ISOMsg getDefaultTestMessage() {
         ISOMsg msg = new ISOMsg("0800");
-        msg.set(11, "012345");
-        msg.set(41, "543210");
+        msg.set(11, String.format("%06d", System.currentTimeMillis() % 1000000));
+        msg.set(41, "JMETER");
         return msg;
     }
 
     public void configureSampler(ISO8583Sampler sampler, ISO8583Config config, MessageField... fields) {
+        configureSampler(sampler, config, asMessageFields(fields));
+    }
+
+    public void configureSampler(ISO8583Sampler sampler, ISO8583Config config, Collection<MessageField> fields) {
         ctx.context.setCurrentSampler(sampler);
-        sampler.setFields(asMessageFields(fields));
+        sampler.setFields(fields);
         sampler.addTestElement(config);
     }
 }

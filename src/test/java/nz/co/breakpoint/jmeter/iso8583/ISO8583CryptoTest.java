@@ -22,8 +22,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
 
     @Before
     public void setup() {
-        configureSampler(sampler, getDefaultTestConfig(),
-            asMessageFields(getDefaultTestMessage()).toArray(new MessageField[0]));
+        configureSampler(sampler, getDefaultTestConfig(), asMessageFields(getDefaultTestMessage()));
     }
 
     @Test

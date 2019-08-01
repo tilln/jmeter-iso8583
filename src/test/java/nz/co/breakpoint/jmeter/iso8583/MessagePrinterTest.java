@@ -15,8 +15,8 @@ public class MessagePrinterTest extends ISO8583TestBase {
         String dump = MessagePrinter.asString(msg, true);
         assertTrue(dump.startsWith("<isomsg>"));
         assertTrue(dump.contains("<field id=\"0\" value=\"0800\"/>"));
-        assertTrue(dump.contains("<field id=\"11\" value=\"012345\"/>"));
-        assertTrue(dump.contains("<field id=\"41\" value=\"543210\"/>"));
+        assertTrue(dump.contains("<field id=\"11\" value=\""+msg.getString(11)+"\"/>"));
+        assertTrue(dump.contains("<field id=\"41\" value=\""+msg.getString(41)+"\"/>"));
         assertFalse(dump.contains("<!--")); // no packager, no hexdump
     }
 

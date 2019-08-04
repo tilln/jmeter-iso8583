@@ -43,9 +43,9 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
         assertEquals("1122334455667788", response.getString("48.1"));
     }
 
-//    @Test
+    @Test
     public void shouldAllowFireAndForget() {
-        instance.setTimeout(-1); // indicates fire-and-forget
+        instance.setTimeout(0); // indicates fire-and-forget
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);
         assertTrue(res.isSuccessful());

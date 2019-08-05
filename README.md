@@ -20,7 +20,7 @@ This plugin uses a jPOS [Generic Packager](http://jpos.org/doc/proguide.pdf#%5B%
 that needs to be configured with an XML file.
 
 Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/master/jpos/src/dist/cfg/packager)
-may be used as is or with few customisations.
+may be used as-is or with few customisations.
 
 #### Sample Message
 
@@ -38,7 +38,7 @@ Usage
 
 ![ISO8583 Config](docs/config.png)
 
-This Configuration element must be included to use the *ISO8583 Sampler*. 
+This Configuration Element must be included to use the *ISO8583 Sampler*. 
 
 Mandatory settings:
 - *Channel Class*: 
@@ -79,7 +79,7 @@ It manages either set of 3 components (depending on client or server mode):
 
 While normally those would be configured by placing corresponding XML files into a `deploy` folder,
 here it is done dynamically via transforming configuration properties from the JMeter Test Plan
-into in-memory deployment descriptors objects.
+into in-memory deployment descriptor objects.
 These descriptors are then used to create and deploy QBeans at the test start and destroy them at the end.
 
 For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
@@ -111,7 +111,7 @@ the field's *Content* is treated as binary and interpreted as hex digits (replac
 
 If the Packager's field class is not binary or cannot be determined (e.g. if there are no subfields, as for
 [`BERTLVBinaryPackager`](http://jpos.org/doc/javadoc/org/jpos/tlv/packager/bertlv/BERTLVBinaryPackager.html),
-the *Content* will be taken as is and not be interpreted as hex digits.
+the *Content* will be taken as-is and not be interpreted as hex digits.
 JMeter's function [`${__char()}`](https://jmeter.apache.org/usermanual/functions.html#__char)
 can be used to enter binary values in that case.
 
@@ -132,7 +132,7 @@ marking 4xx and 5xx responses as failures).
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Code* (usually 00): Expected value for successful responses.
 
-If either of the Response Code fields are empty, no validation will be performed.
+If either of the Response Code entries are empty, no validation will be performed.
 
 #### Subfields
 
@@ -209,10 +209,10 @@ However, its fields will be applied to all samplers in scope, so it can be used 
 |16|<code>${__time(MMdd,)}</code>| |Currency conversion date|
 |17|<code>${__time(MMdd,)}</code>| |Capture date|
 
-If any particular field number is present in the sampler as well as the component, the one in the sampler takes precedence.
+If any particular field number is present in the sampler as well as the Component, the one in the sampler takes precedence.
 
-If a sampler has more than one component in its scope, their fields will all be merged into the sampler, 
-unless a field is already present in the sampler *or* a component in a scope closer to the sampler.
+If a sampler has more than one Component in its scope, their fields will all be merged into the sampler, 
+unless a field is already present in the sampler *or* a Component in a scope closer to the sampler.
 
 In other words, inner fields take precedence over outer ones, 
 with the sampler's fields themselves being the innermost ones.
@@ -271,7 +271,7 @@ and the calculated ARQC value will be added as an additional subfield.
 - *Additional Transaction Data*: Hex digits entered here will be appended to the sequence of ARQC input bytes 
 extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
 
-Missing ARQC input tags will be ignored, i.e. no validation mandatory is performed that all mandatory tags are present.
+Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
 
 Installation
 ------------
@@ -320,8 +320,8 @@ The following properties control the plugin behaviour:
    This may be used to include additional (or exclude standard) tags
    (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
 - `jmeter.iso8583.binaryFieldTags`:
-   Comma-separated list of hexadecimal tag numbers that will be interpreted as binary fields
-   (default: none).
+   Comma-separated list of hexadecimal tag numbers that will be interpreted as binary fields,
+   in addition to binary EMV tags (default: none).
 - `jmeter.iso8583.ksnDescriptor`:
    Defines the [Key Serial Number Scheme](https://en.wikipedia.org/wiki/Derived_unique_key_per_transaction#Practical_Matters_(KSN_scheme)),
    i.e. the length (in hex digits) of the KSN parts: BDK ID (or KSI), Device ID (or TRSM ID), transaction counter
@@ -334,4 +334,4 @@ Packager logging is not currently implemented, so debugging Packager issues shou
 
 Troubleshooting
 ---------------
-Inspect the JMeter log, after increase the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.
+Inspect the JMeter log, after increasing the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.

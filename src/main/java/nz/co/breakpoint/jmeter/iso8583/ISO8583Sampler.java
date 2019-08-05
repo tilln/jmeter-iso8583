@@ -161,7 +161,12 @@ public class ISO8583Sampler extends AbstractSampler
 
         // Response validation...
         if (response == null) {
-            result.setResponseMessage("Timeout");
+            if (getTimeout() == 0) { // fire-and-forget
+                result.setResponseMessage("No response");
+                result.setSuccessful(true);
+            } else {
+                result.setResponseMessage("Timeout");
+            }
             return result;
         }
         result.setSuccessful(true); // at least we received a response, so start off as success

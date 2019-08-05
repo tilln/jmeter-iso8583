@@ -127,7 +127,8 @@ The response code can be used to distinguish failed and successful samples
 (similar to JMeter's [HTTP Request](https://jmeter.apache.org/usermanual/component_reference.html#HTTP_Request)
 marking 4xx and 5xx responses as failures).
 - *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
-  The value 0 turns off the timeout, and should be used with care.
+  The value 0 can be used to send requests without expecting any response message 
+  (["fire and forget"](https://www.enterpriseintegrationpatterns.com/patterns/conversation/FireAndForget.html)).
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Code* (usually 00): Expected value for successful responses.
 

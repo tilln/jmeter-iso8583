@@ -53,6 +53,11 @@ XML configuration file that defines the packaging format of each message field (
       before starting threads (timeout configurable via JMeter property `jmeter.iso8583.incomingConnectionTimeout`).
 - *Port*: 
 Port number to connect to (outgoing from JMeter in client mode; incoming to JMeter in server mode).
+- *Reuse Connection* (only for client mode): Whether to reuse a persistent connection or reconnect for every request
+(default: true).
+- *Maximum Connections*:
+    * Client mode (only for non-persistent connections): Maximum number of concurrent connections to the remote host.
+    * Server mode: Ignored.
 
 Optional settings:
 - *Channel Header*: 

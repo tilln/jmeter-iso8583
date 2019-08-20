@@ -17,7 +17,7 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT, CONFIG,
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, CONFIG,
         });
 
         p = property(CLASSNAME);
@@ -39,6 +39,14 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "");
 
         p = property(PORT);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(REUSECONNECTION);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, Boolean.TRUE);
+
+        p = property(MAXCONNECTIONS);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 

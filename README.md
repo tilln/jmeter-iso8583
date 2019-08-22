@@ -334,4 +334,4 @@ Packager logging is not currently implemented, so debugging Packager issues shou
 
 Troubleshooting
 ---------------
-Inspect the JMeter log, after increasing the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.iso8583=DEBUG`.
+Inspect the JMeter log, after increasing the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.jmeter.iso8583=DEBUG`.

@@ -9,6 +9,7 @@ import javax.management.*;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.property.BooleanProperty;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
@@ -21,9 +22,7 @@ import org.jpos.iso.packager.GenericPackager;
 import org.jpos.q2.Q2;
 import org.jpos.q2.QBeanSupport;
 import org.jpos.q2.QFactory;
-import org.jpos.q2.iso.ChannelAdaptor;
-import org.jpos.q2.iso.QMUX;
-import org.jpos.q2.iso.QServer;
+import org.jpos.q2.iso.*;
 import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +58,8 @@ public class ISO8583Config extends ConfigTestElement
         HEADER = "header",
         HOST = "host",
         PORT = "port",
+        REUSECONNECTION = "reuseConnection",
+        MAXCONNECTIONS = "maxConnections",
         CONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
@@ -180,8 +181,37 @@ public class ISO8583Config extends ConfigTestElement
         return descriptor;
     }
 
+    protected Element getChannelAdaptorDescriptor(String key) {
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
+        Element descriptor = new Element("channel-adaptor")
+            .setAttribute("name", getChannelAdaptorName())
+            .setAttribute("logger", Q2_LOGGER)
+            .addContent(new Element("in").addContent(key+"-send"))
+            .addContent(new Element("out").addContent(key+"-receive"))
+            .addContent(new Element("reconnect-delay").addContent(
+                    JMeterUtils.getPropDefault(CHANNEL_RECONNECT_DELAY, "10000")))
+            .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
+        return descriptor;
+    }
+
+    protected Element getOneShotChannelAdaptorDescriptor(String key) {
+        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/one_shot_channel_adaptor.adoc
+        Element descriptor = new Element("qbean")
+                .setAttribute("name", getChannelAdaptorName())
+                .setAttribute("logger", Q2_LOGGER)
+                .setAttribute("class", OneShotChannelAdaptorMK2.class.getName())
+                .addContent(new Element("in").addContent(key+"-send"))
+                .addContent(new Element("out").addContent(key+"-receive"));
+
+        final String maxConnections = getMaxConnections();
+        if (maxConnections != null && !maxConnections.isEmpty()) {
+            descriptor.addContent(new Element("max-connections").addContent(getMaxConnections()));
+        }
+        return descriptor;
+    }
+
     // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
-    protected ChannelAdaptor startChannelAdaptor() {
+    protected QBeanSupport startChannelAdaptor() {
         final String key = getPropertyAsString(CONFIG_KEY);
         Element channelDescriptor = getChannelDescriptor(key);
         if (channelDescriptor == null) return null;
@@ -196,25 +226,15 @@ public class ISO8583Config extends ConfigTestElement
             log.error("Port undefined, cannot start ChannelAdaptor");
             return null;
         }
-        // Build QBean deployment descriptor in memory
-        // https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/channel_adaptor.adoc
-        Element descriptor = new Element("channel-adaptor")
-            .setAttribute("name", getChannelAdaptorName())
-            .setAttribute("logger", Q2_LOGGER)
-            .addContent(channelDescriptor)
-            .addContent(new Element("in").addContent(key+"-send"))
-            .addContent(new Element("out").addContent(key+"-receive"))
-            .addContent(new Element("reconnect-delay").addContent(
-                JMeterUtils.getPropDefault(CHANNEL_RECONNECT_DELAY, "10000")))
-            .addContent(new Element("wait-for-workers-on-stop").addContent("yes"));
+        Element descriptor = isReuseConnection() ? getChannelAdaptorDescriptor(key)
+                : getOneShotChannelAdaptorDescriptor(key);
+        descriptor.addContent(channelDescriptor);
 
-        ChannelAdaptor channelAdaptor = (ChannelAdaptor) deployAndStart(descriptor);
-        log.debug("Deployed ChannelAdaptor {}", channelAdaptor.getName());
-        return channelAdaptor;
+        return deployAndStart(descriptor);
     }
 
     // Registers QServer <key>-server and ISOServer server.<key>-server
-    protected QServer startQServer() {
+    protected QBeanSupport startQServer() {
         final String key = getPropertyAsString(CONFIG_KEY);
         Element channelDescriptor = getChannelDescriptor(key);
         if (channelDescriptor == null) return null;
@@ -240,14 +260,12 @@ public class ISO8583Config extends ConfigTestElement
 
         addSSLConfig(descriptor);
 
-        QServer qserver = (QServer) deployAndStart(descriptor);
-        log.debug("Deployed QServer {}", qserver.getName());
-        return qserver;
+        return deployAndStart(descriptor);
     }
 
     // Registers QMUX mux.<key>-mux and connects with <key>-receive and <key>-send Space queues
     // Would usually be called *after* startChannelAdaptor or startQServer.
-    protected QMUX startMux() {
+    protected QBeanSupport startMux() {
         final String key = getPropertyAsString(CONFIG_KEY);
 
         // Build QBean deployment descriptor in memory
@@ -261,15 +279,13 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("unhandled").addContent(key+"-unhandled"))
             .addContent(new Element("ready").addContent(key+".ready"));
 
-        QMUX mux = (QMUX) deployAndStart(descriptor);
-        log.debug("Deployed QMUX {}", mux.getName());
-        return mux;
+        return deployAndStart(descriptor);
     }
 
     // Mimic Q2 deployment of a descriptor file, followed by starting the QBean,
     // https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/q2/Q2.java#L560
     // but using more accessible QFactory methods:
-    protected Object deployAndStart(Element descriptor) {
+    protected QBeanSupport deployAndStart(Element descriptor) {
         if (log.isDebugEnabled()) {
             log.debug("Deploying {}", new XMLOutputter().outputString(descriptor));
         }
@@ -278,7 +294,7 @@ public class ISO8583Config extends ConfigTestElement
             Object qbean = qFactory.instantiate(q2, descriptor);
             ObjectInstance obj = qFactory.createQBean(q2, descriptor, qbean);
             qFactory.startQBean(q2, obj.getObjectName());
-            return qbean;
+            return (QBeanSupport) qbean;
         } catch (Exception e) {
             log.error("Failed to deploy {}", descriptor.getName(), e);
             return null;
@@ -354,7 +370,7 @@ public class ISO8583Config extends ConfigTestElement
         log.debug("'{}' setting up QBeans {}", getName(), configKey);
 
         if (isServer()) {
-            QServer qserver = startQServer();
+            QBeanSupport qserver = startQServer();
             if (qserver == null) return;
 
             long waitTime = JMeterUtils.getPropDefault(INCOMING_CONNECTION_TIMEOUT, 60000);
@@ -410,6 +426,9 @@ public class ISO8583Config extends ConfigTestElement
     public String getPort() { return getPropertyAsString(PORT); }
     public void setPort(String port) { setProperty(new StringProperty(PORT, port)); }
 
+    public String getMaxConnections() { return getPropertyAsString(MAXCONNECTIONS); }
+    public void setMaxConnections(String maxConnections) { setProperty(new StringProperty(MAXCONNECTIONS, maxConnections)); }
+
     // Need Collection getter/setter for TestBean GUI
     public Collection<ChannelConfigItem> getChannelConfig() {
         Collection<ChannelConfigItem> items = new ArrayList<>();
@@ -433,4 +452,7 @@ public class ISO8583Config extends ConfigTestElement
 
     public String getKeyPassword() { return getPropertyAsString(KEYPASSWORD); }
     public void setKeyPassword(String keyPassword) { setProperty(new StringProperty(KEYPASSWORD, keyPassword)); }
+
+    public boolean isReuseConnection() { return getPropertyAsBoolean(REUSECONNECTION); }
+    public void setReuseConnection(boolean reuseConnection) { setProperty(new BooleanProperty(REUSECONNECTION, reuseConnection)); }
 }

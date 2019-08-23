@@ -1,9 +1,9 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import org.jpos.iso.channel.XMLChannel;
-import org.jpos.q2.iso.ChannelAdaptor;
-import org.jpos.q2.iso.QMUX;
-import org.jpos.q2.iso.QServer;
+import org.jpos.q2.QBean;
+import org.jpos.q2.QBeanSupport;
+import org.jpos.q2.iso.*;
 import org.jpos.util.NameRegistrar;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -19,6 +19,8 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @After
     public void teardown() {
+        instance.stopQServer();
+        instance.stopChannelAdaptor();
         instance.stopQ2();
     }
 
@@ -31,8 +33,9 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @Test
     public void shouldCreateChannel() {
-        ChannelAdaptor channelAdaptor = instance.startChannelAdaptor();
-        assertNotNull(channelAdaptor);
+        QBean qbean = instance.startChannelAdaptor();
+        assertTrue(qbean instanceof ChannelAdaptor);
+        ChannelAdaptor channelAdaptor = (ChannelAdaptor) qbean;
         assertEquals("jmeter-channel", channelAdaptor.getName());
         assertEquals(getDefaultTestConfig().getHost(), channelAdaptor.getHost());
         assertEquals(Integer.parseInt(getDefaultTestConfig().getPort()), channelAdaptor.getPort());
@@ -42,8 +45,22 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
     }
 
     @Test
+    public void shouldCreateNonpersistentChannel() {
+        instance.setReuseConnection(false);
+        QBean qbean = instance.startChannelAdaptor();
+        assertTrue(qbean instanceof OneShotChannelAdaptorMK2);
+        OneShotChannelAdaptorMK2 channelAdaptor = (OneShotChannelAdaptorMK2) qbean;
+        assertEquals("jmeter-channel", channelAdaptor.getName());
+        assertEquals(getDefaultTestConfig().getHost(), channelAdaptor.getHost());
+        assertEquals(Integer.parseInt(getDefaultTestConfig().getPort()), channelAdaptor.getPort());
+        assertNotNull(NameRegistrar.getIfExists("jmeter-channel"));
+        assertTrue(channelAdaptor.running());
+        // Channel itself is not running, but only when connection attempt is made
+    }
+
+    @Test
     public void shouldCreateServer() {
-        QServer qserver = instance.startQServer();
+        QBeanSupport qserver = instance.startQServer();
         assertNotNull(qserver);
         assertEquals("jmeter-server", qserver.getName());
         assertNotNull(NameRegistrar.getIfExists("jmeter-server"));
@@ -55,7 +72,7 @@ public class ISO8583ConfigTest extends ISO8583TestBase {
 
     @Test
     public void shouldCreateMux() {
-        QMUX mux = instance.startMux();
+        QBeanSupport mux = instance.startMux();
         assertNotNull(mux);
         assertEquals("jmeter-mux", mux.getName());
         assertNotNull(NameRegistrar.getIfExists("mux.jmeter-mux"));

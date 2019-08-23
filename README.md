@@ -73,6 +73,23 @@ For SSL/TLS connections, the *Keystore File*
     * Client mode: the server's public certificate to trust and, optionally, 
       the client certificate to send for authentication (mutual SSL).
     * Server mode: the server certificate (with public and private key).
+- *Mux Settings*:
+    Control how the Mux finds matches between outgoing requests and incoming response messages. 
+    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
+    for further details.
+    * *MTI Mapping*: 3 ten-digit numbers representing how the first 3 MTI digits are mapped between request and response.
+    Example (default): "0123456789 0123456789 0022446789" maps response MTI `0110` to request MTI `0100`.
+    * *Mux Key Configuration*:
+        Each row contains the key fields for a message type as per the *MTI* column, or for all
+        messages if the *MTI* column is empty.
+        
+        Example: Override default key to use fields 42, 41, 11 for all messages, 
+        except *0800* messages for which field 41 is used.
+
+        |MTI |Key Fields|
+        |----|----------|
+        |    |42 41 11  |
+        |0800|41        |
 
 ##### Implementation Details
 

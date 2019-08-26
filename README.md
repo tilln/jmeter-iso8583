@@ -352,7 +352,8 @@ The following properties control the plugin behaviour:
 Limitations
 -----------
 
-Packager logging is not currently implemented, so debugging Packager issues should be done outside of JMeter.
+- Minimum JMeter version 4.0
+- Packager logging is not currently implemented, so debugging Packager issues should be done outside of JMeter.
 
 Troubleshooting
 ---------------

@@ -53,9 +53,9 @@ XML configuration file that defines the packaging format of each message field (
       before starting threads (timeout configurable via JMeter property `jmeter.iso8583.incomingConnectionTimeout`).
 - *Port*: 
 Port number to connect to (outgoing from JMeter in client mode; incoming to JMeter in server mode).
-- *Reuse Connection* (only for client mode): Whether to reuse a persistent connection or reconnect for every request
+- *Reuse Connection* (only for client mode; since v1.1): Whether to reuse a persistent connection or reconnect for every request
 (default: true).
-- *Maximum Connections*:
+- *Maximum Connections* (since v1.1):
     * Client mode (only for non-persistent connections): Maximum number of concurrent connections to the remote host.
     * Server mode: Ignored.
 
@@ -73,7 +73,7 @@ For SSL/TLS connections, the *Keystore File*
     * Client mode: the server's public certificate to trust and, optionally, 
       the client certificate to send for authentication (mutual SSL).
     * Server mode: the server certificate (with public and private key).
-- *Mux Settings*:
+- *Mux Settings* (since v1.1):
     Control how the Mux finds matches between outgoing requests and incoming response messages. 
     See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
     for further details.

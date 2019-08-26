@@ -17,7 +17,7 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, CONFIG,
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, CHANNELCONFIG,
         });
 
         p = property(CLASSNAME);
@@ -50,14 +50,13 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
-        p = property(CONFIG);
+        p = property(CHANNELCONFIG);
         p.setPropertyEditorClass(TableEditor.class);
         p.setValue(TableEditor.CLASSNAME, ChannelConfigItem.class.getName());
-        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(CONFIG+".tableHeaders",
+        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(CHANNELCONFIG +".tableHeaders",
             new String[]{"Name", "Value"}));
         p.setValue(TableEditor.OBJECT_PROPERTIES,
             new String[]{"name", ChannelConfigItem.VALUE}); // name is a standard TestElement member
-        p.setValue(TableEditor.OBJECT_PROPERTIES, new String[]{"name", "value"});
 
         createPropertyGroup("SSL", new String[]{
              KEYSTORE, STOREPASSWORD, KEYPASSWORD,
@@ -76,5 +75,21 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setPropertyEditorClass(PasswordEditor.class);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
+
+        createPropertyGroup("Mux", new String[]{
+             MTIMAPPING, MUXKEYCONFIG,
+        });
+
+        p = property(MTIMAPPING);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(MUXKEYCONFIG);
+        p.setPropertyEditorClass(TableEditor.class);
+        p.setValue(TableEditor.CLASSNAME, MuxKeyConfigItem.class.getName());
+        p.setValue(TableEditor.HEADERS, getTableHeadersWithDefaults(MUXKEYCONFIG +".tableHeaders",
+                new String[]{"MTI", "Key Fields"}));
+        p.setValue(TableEditor.OBJECT_PROPERTIES,
+                new String[]{"name", MuxKeyConfigItem.VALUE}); // name is a standard TestElement member
     }
 }

@@ -60,10 +60,12 @@ public class ISO8583Config extends ConfigTestElement
         PORT = "port",
         REUSECONNECTION = "reuseConnection",
         MAXCONNECTIONS = "maxConnections",
-        CONFIG = "channelConfig",
+        CHANNELCONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
-        KEYPASSWORD = "keyPassword";
+        KEYPASSWORD = "keyPassword",
+        MTIMAPPING = "mtiMapping",
+        MUXKEYCONFIG = "muxKeyConfig";
 
     // Lookup map of Channel classes that come with jPOS (for GUI dropdown):
     static final Map<String, String> channelClasses = new HashMap<>();
@@ -279,6 +281,17 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("unhandled").addContent(key+"-unhandled"))
             .addContent(new Element("ready").addContent(key+".ready"));
 
+        final String mtiMapping = getMtiMapping();
+        if (mtiMapping != null && !mtiMapping.isEmpty()) {
+            descriptor.addContent(new Element("mtimapping").addContent(mtiMapping));
+        }
+        getMuxKeyConfig().forEach(c -> {
+            Element muxKey = new Element("key").addContent(c.getValue());
+            if (c.getName() != null && !c.getName().isEmpty()) {
+                muxKey.setAttribute("mti", c.getName());
+            }
+            descriptor.addContent(muxKey);
+        });
         return deployAndStart(descriptor);
     }
 
@@ -432,7 +445,7 @@ public class ISO8583Config extends ConfigTestElement
     // Need Collection getter/setter for TestBean GUI
     public Collection<ChannelConfigItem> getChannelConfig() {
         Collection<ChannelConfigItem> items = new ArrayList<>();
-        JMeterProperty cfg = getProperty(CONFIG);
+        JMeterProperty cfg = getProperty(CHANNELCONFIG);
         if (cfg instanceof CollectionProperty) {
             ((CollectionProperty)cfg).iterator()
                 .forEachRemaining(p -> items.add((ChannelConfigItem) p.getObjectValue()));
@@ -441,7 +454,7 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     public void setChannelConfig(Collection<ChannelConfigItem> items) {
-        setProperty(new CollectionProperty(CONFIG, items));
+        setProperty(new CollectionProperty(CHANNELCONFIG, items));
     }
 
     public String getKeystore() { return getPropertyAsString(KEYSTORE); }
@@ -455,4 +468,22 @@ public class ISO8583Config extends ConfigTestElement
 
     public boolean isReuseConnection() { return getPropertyAsBoolean(REUSECONNECTION); }
     public void setReuseConnection(boolean reuseConnection) { setProperty(new BooleanProperty(REUSECONNECTION, reuseConnection)); }
+
+    public String getMtiMapping() { return getPropertyAsString(MTIMAPPING); }
+    public void setMtiMapping(String mtiMapping) { setProperty(new StringProperty(MTIMAPPING, mtiMapping)); }
+
+    // Need Collection getter/setter for TestBean GUI
+    public Collection<MuxKeyConfigItem> getMuxKeyConfig() {
+        Collection<MuxKeyConfigItem> items = new ArrayList<>();
+        JMeterProperty cfg = getProperty(MUXKEYCONFIG);
+        if (cfg instanceof CollectionProperty) {
+            ((CollectionProperty)cfg).iterator()
+                .forEachRemaining(p -> items.add((MuxKeyConfigItem) p.getObjectValue()));
+        }
+        return items;
+    }
+
+    public void setMuxKeyConfig(Collection<MuxKeyConfigItem> items) {
+        setProperty(new CollectionProperty(MUXKEYCONFIG, items));
+    }
 }

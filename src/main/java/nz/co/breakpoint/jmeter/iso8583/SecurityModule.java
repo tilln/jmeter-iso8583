@@ -177,4 +177,21 @@ public class SecurityModule extends JCESecurityModule {
         }
         return "";
     }
+
+    protected byte[] calculatePINBlock(String pin, byte format, String pan) {
+        try {
+            Method m = getClass().getSuperclass().getDeclaredMethod("calculatePINBlock",
+                String.class, byte.class, String.class);
+            m.setAccessible(true);
+            return (byte[]) m.invoke(this, pin, format, pan);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to calculate PIN Block {}", e.toString(), e);
+        }
+        return null;
+    }
+
+    public String calculatePINBlock(String pin, String format, String pan) {
+        return ISOUtil.byte2hex(calculatePINBlock(pin, Byte.parseByte(format),
+            EncryptedPIN.extractAccountNumberPart(pan)));
+    }
 }

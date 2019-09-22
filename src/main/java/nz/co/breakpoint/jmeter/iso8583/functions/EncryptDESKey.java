@@ -21,7 +21,7 @@ public class EncryptDESKey extends AbstractCryptoFunction {
         if (encryptingKey == null || encryptingKey.isEmpty())
             throw new InvalidVariableException("Encrypting key must not be empty");
 
-        String encryptedKey = securityModule.encryptDESKey(formDESKey(clearKey), formDESKey(encryptingKey));
+        String encryptedKey = securityModule.encryptDESKey(clearKey, encryptingKey);
 
         addVariableValue(encryptedKey, values, 2);
 

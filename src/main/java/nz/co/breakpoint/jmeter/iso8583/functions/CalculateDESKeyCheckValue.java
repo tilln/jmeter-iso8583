@@ -18,7 +18,7 @@ public class CalculateDESKeyCheckValue extends AbstractCryptoFunction {
         if (clearKey == null || clearKey.isEmpty())
             throw new InvalidVariableException("Clear key must not be empty");
 
-        String kcv = securityModule.calculateKeyCheckValue(formDESKey(clearKey));
+        String kcv = securityModule.calculateKeyCheckValue(clearKey);
 
         addVariableValue(kcv, values, 1);
 

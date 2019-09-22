@@ -25,8 +25,4 @@ public abstract class AbstractCryptoFunction extends AbstractFunction {
 
     @Override
     public List<String> getArgumentDesc() { return argumentDesc; }
-
-    protected Key formDESKey(String hex) {
-        return new SecretKeySpec(ISOUtil.hex2byte(hex), hex.length() == 16 ? "DES" : "DESede");
-    }
 }

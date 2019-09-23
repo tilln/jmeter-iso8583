@@ -99,14 +99,11 @@ public class SecurityModule extends JCESecurityModule {
         return "";
     }
 
-    public String calculateCVV(String accountNo, Key cvk, String expDate, String serviceCode) {
+    public String calculateCVV(String accountNo, String cvk, String expDate, String serviceCode) {
         try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculateCVD",
-                String.class, Key.class, String.class, String.class);
-            m.setAccessible(true);
-            return (String) m.invoke(this, accountNo, cvk, expDate, serviceCode);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke calculateCVD", e);
+            return calculateCVD(accountNo, formDESKey(cvk), expDate, serviceCode);
+        } catch (Exception e) {
+            log.error("Failed to calculate CVV", e);
         }
         return "";
     }
@@ -153,6 +150,18 @@ public class SecurityModule extends JCESecurityModule {
             log.error("Failed to access jceHandler", e);
         }
         return null;
+    }
+
+    protected String calculateCVD(String accountNo, Key cvk, String expDate, String serviceCode) {
+        try {
+            Method m = getClass().getSuperclass().getDeclaredMethod("calculateCVD",
+                    String.class, Key.class, String.class, String.class);
+            m.setAccessible(true);
+            return (String) m.invoke(this, accountNo, cvk, expDate, serviceCode);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            log.error("Failed to invoke calculateCVD", e);
+        }
+        return "";
     }
 
     protected byte[] calculateDerivedKey(KeySerialNumber ksn, SecureDESKey bdk, boolean tdes, boolean dataEncryption) {

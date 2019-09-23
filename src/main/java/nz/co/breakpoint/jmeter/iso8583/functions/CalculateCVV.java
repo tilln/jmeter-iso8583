@@ -17,8 +17,8 @@ public class CalculateCVV extends AbstractCryptoFunction {
     @Override
     public String execute(SampleResult prev, Sampler sampler) throws InvalidVariableException {
         try {
-            Key cvk = new SecretKeySpec(ISOUtil.hex2byte(values[0].execute()), "DESede");
-            String cvv = securityModule.calculateCVV(values[1].execute(), cvk, values[2].execute(), values[3].execute());
+            String cvv = securityModule.calculateCVV(values[1].execute(), values[0].execute(), values[2].execute(),
+                values[3].execute());
             addVariableValue(cvv, values, 4);
             return cvv;
         } catch (IllegalArgumentException e) {

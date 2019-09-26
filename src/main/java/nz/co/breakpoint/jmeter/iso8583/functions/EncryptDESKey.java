@@ -13,12 +13,12 @@ public class EncryptDESKey extends AbstractCryptoFunction {
 
     @Override
     public String execute(SampleResult prev, Sampler sampler) throws InvalidVariableException {
-        String clearKey = values[0].execute();
-        String encryptingKey = values[1].execute();
+        String clearKey = values[0].execute().trim();
+        String encryptingKey = values[1].execute().trim();
 
-        if (clearKey == null || clearKey.isEmpty())
+        if (clearKey.isEmpty())
             throw new InvalidVariableException("Clear key must not be empty");
-        if (encryptingKey == null || encryptingKey.isEmpty())
+        if (encryptingKey.isEmpty())
             throw new InvalidVariableException("Encrypting key must not be empty");
 
         String encryptedKey = securityModule.encryptDESKey(clearKey, encryptingKey);

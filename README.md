@@ -13,6 +13,7 @@ based on the excellent [jPOS framework](http://jpos.org/). Includes the followin
 - [*ISO8583 Config*](#config) for integration with the system under test,
 - [*ISO8583 Message Component*](#component) (optional) for sharing common message fields,
 - [*ISO8583 Crypto PreProcessor*](#crypto) (optional) for encryption operations of certain message elements (PIN Block, MAC, ARQC).
+- [*Crypto functions*](#functions) (optional) for non-message related cryptographic calculations.
 
 #### Prerequisites
 A so-called Packager is required to transform ("pack") the message into its binary representation for sending it over the wire.
@@ -294,6 +295,60 @@ and the calculated ARQC value will be added as an additional subfield.
 extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
 
 Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
+
+<h3 id="functions">Crypto Functions</h3>
+
+#### __calculateCVV
+
+Example: `${__calculateCVV(${CVK}, ${PAN}, ${EXP}, 999, iCVV)}`
+
+Arguments:
+1. Combined CVV Keys (hex digits)
+2. Primary Account Number (PAN)
+3. Expiry date (yyMM)
+4. Service Code (3 digits)
+5. Name of variable in which to store the result (optional)
+
+#### __calculateDESKeyCheckValue
+
+Example: `${__calculateDESKeyCheckValue(${ZPK}, KCV)}`
+
+Arguments:
+1. Clear DES key for which to calculate the key check value (hex digits)
+2. Name of variable in which to store the result (optional)
+
+#### __calculatePINBlock
+
+Example: `${__calculatePINBlock(1234, 34, ${PAN}, PINBLOCK)}`
+
+Arguments:
+1. PIN
+2. PIN Block Format (as per [jPOS API docs](http://jpos.org/doc/javadoc/org/jpos/security/SMAdapter.html#field.summary)):
+ 
+    |Format|Description|
+    |--|-|
+    | 1|adopted by ANSI (ANSI X9.8) and is one of two formats supported by the ISO (ISO 95641 - format 0).|
+    | 2|supports Douctel ATMs.|
+    | 3|Diebold Pin Block format.|
+    | 4|PIN block format adopted by the PLUS network.|
+    | 5|ISO 9564-1 Format 1 PIN Block.|
+    |34|standard EMV PIN block format.|
+    |35|required by Europay/MasterCard for their Pay Now & Pay Later products.|
+    |41|Visa format for PIN change without using the current PIN.|
+    |42|Visa format for PIN change using the current (old) PIN.
+
+3. Primary Account Number (PAN)
+4. Name of variable in which to store the result (optional)
+
+#### __encryptDESKey
+
+Example: `${__encryptDESKey(${ZPK}, ${KEK}, ZPK_under_KEK)}`
+
+Arguments:
+1. Clear DES key to be encrypted (hex digits)
+2. DES key for encrypting the clear key (hex digits)
+3. Name of variable in which to store the encrypted key (optional)
+
 
 Installation
 ------------

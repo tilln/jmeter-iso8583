@@ -14,13 +14,13 @@ public class CalculatePINBlock extends AbstractCryptoFunction {
 
     @Override
     public String execute(SampleResult sampleResult, Sampler sampler) throws InvalidVariableException {
-        String pin = values[0].execute();
-        String format = values[1].execute();
-        String pan = values[2].execute();
+        String pin = values[0].execute().trim();
+        String format = values[1].execute().trim();
+        String pan = values[2].execute().trim();
 
-        if (pan == null || pan.isEmpty())
+        if (pan.isEmpty())
             throw new InvalidVariableException("Account number must not be empty");
-        if (pin == null || pin.isEmpty())
+        if (pin.isEmpty())
             throw new InvalidVariableException("PIN must not be empty");
 
         String pinBlock = securityModule.calculatePINBlock(pin, format, pan);
@@ -32,6 +32,6 @@ public class CalculatePINBlock extends AbstractCryptoFunction {
     @Override
     public void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
         checkParameterCount(parameters, 3, 4);
-        values = parameters.toArray(new CompoundVariable[parameters.size()]);
+        values = parameters.toArray(new CompoundVariable[0]);
     }
 }

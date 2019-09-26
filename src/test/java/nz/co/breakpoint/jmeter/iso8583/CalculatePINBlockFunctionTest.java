@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class CalculatePINBlockTest extends ISO8583TestBase {
+public class CalculatePINBlockFunctionTest extends ISO8583TestBase {
     CalculatePINBlock instance = new CalculatePINBlock();
 
     @Test

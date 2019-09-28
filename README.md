@@ -296,7 +296,7 @@ extracted from the ICC Data field. Useful if non-standard tags are to be include
 
 Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
 
-<h3 id="functions">Crypto Functions</h3>
+<h3 id="functions">Crypto Functions (since v1.1)</h3>
 
 #### __calculateCVV
 
@@ -348,6 +348,14 @@ Arguments:
 1. Clear DES key to be encrypted (hex digits)
 2. DES key for encrypting the clear key (hex digits)
 3. Name of variable in which to store the encrypted key (optional)
+
+#### __generateDESKey
+
+Example: `${__generateDESKey(192, ZPK)}`
+
+Arguments:
+1. Key length in bits (64, 128 or 192)
+2. Name of variable in which to store the result (optional)
 
 
 Installation

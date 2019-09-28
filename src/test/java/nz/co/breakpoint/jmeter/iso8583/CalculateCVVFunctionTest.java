@@ -26,4 +26,10 @@ public class CalculateCVVFunctionTest extends ISO8583TestBase {
         instance.setParameters(Arrays.asList(cvk, pan, exp, new CompoundVariable("999"))); // iCVV
         assertEquals("163", instance.execute(null, null));
     }
+
+    @Test(expected = InvalidVariableException.class)
+    public void shouldValidateParameters() throws InvalidVariableException {
+        instance.setParameters(Arrays.asList(new CompoundVariable("")));
+        assertEquals("", instance.execute(null, null));
+    }
 }

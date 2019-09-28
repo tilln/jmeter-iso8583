@@ -43,4 +43,10 @@ public class EncryptDESKeyFunctionTest extends ISO8583TestBase {
         ));
         assertEquals(expected+expected, instance.execute(null, null));
     }
+
+    @Test(expected = InvalidVariableException.class)
+    public void shouldValidateParameters() throws InvalidVariableException {
+        instance.setParameters(Arrays.asList(new CompoundVariable("")));
+        assertEquals("", instance.execute(null, null));
+    }
 }

@@ -23,4 +23,10 @@ public class CalculatePINBlockFunctionTest extends ISO8583TestBase {
         assertEquals(pinBlock, instance.execute(null, null));
         assertEquals(pinBlock, ctx.context.getVariables().get("pinblock"));
     }
+
+    @Test(expected = InvalidVariableException.class)
+    public void shouldValidateParameters() throws InvalidVariableException {
+        instance.setParameters(Arrays.asList(new CompoundVariable("")));
+        assertEquals("", instance.execute(null, null));
+    }
 }

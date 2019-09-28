@@ -138,6 +138,18 @@ public class SecurityModule extends JCESecurityModule {
         return "";
     }
 
+    public String generateDESKey(String length) {
+        try {
+            Short bits = Short.parseShort(length);
+            Key key = getJceHandler().generateDESKey(bits);
+            // ensure expected key length (https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L111-L113):
+            return ISOUtil.byte2hex(key.getEncoded()).substring(0, bits/4);
+        } catch (JCEHandlerException e) {
+            log.error("Failed to generate DES Key", e);
+        }
+        return "";
+    }
+
     /* Reflection overrides.
      * TODO remove when upgrading to jPOS 2.1.4
      */

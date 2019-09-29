@@ -16,19 +16,28 @@ public class CalculateCVV extends AbstractCryptoFunction {
 
     @Override
     public String execute(SampleResult prev, Sampler sampler) throws InvalidVariableException {
-        try {
-            String cvv = securityModule.calculateCVV(values[1].execute(), values[0].execute(), values[2].execute(),
-                values[3].execute());
-            addVariableValue(cvv, values, 4);
-            return cvv;
-        } catch (IllegalArgumentException e) {
-            throw new InvalidVariableException(e);
-        }
+        String cvk = values[0].execute().trim();
+        String pan = values[1].execute().trim();
+        String exp = values[2].execute().trim();
+        String sc = values[3].execute().trim();
+
+        if (cvk.isEmpty())
+            throw new InvalidVariableException("CVV key must not be empty");
+        if (pan.isEmpty())
+            throw new InvalidVariableException("PAN must not be empty");
+        if (exp.isEmpty())
+            throw new InvalidVariableException("Expiry date must not be empty");
+        if (sc.isEmpty())
+            throw new InvalidVariableException("Service Code must not be empty");
+
+        String cvv = securityModule.calculateCVV(pan, cvk, exp, sc);
+        addVariableValue(cvv, values, 4);
+        return cvv;
     }
 
     @Override
     public void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
         checkParameterCount(parameters, 4, 5);
-        values = parameters.toArray(new CompoundVariable[parameters.size()]);
+        values = parameters.toArray(new CompoundVariable[0]);
     }
 }

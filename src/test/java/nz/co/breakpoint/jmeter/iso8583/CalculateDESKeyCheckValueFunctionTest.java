@@ -23,4 +23,10 @@ public class CalculateDESKeyCheckValueFunctionTest extends ISO8583TestBase {
         ));
         assertEquals("a8b7b5", instance.execute(null, null));
     }
+
+    @Test(expected = InvalidVariableException.class)
+    public void shouldValidateParameters() throws InvalidVariableException {
+        instance.setParameters(Arrays.asList(new CompoundVariable("")));
+        assertEquals("", instance.execute(null, null));
+    }
 }

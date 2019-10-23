@@ -148,6 +148,15 @@ public class ISO8583Config extends ConfigTestElement
                 .setAttribute("name", "port")
                 .setAttribute("value", getPort()));
 
+        if (JMeterUtils.getPropDefault(Q2_PACKAGER_LOGGING, false)) {
+            channelDescriptor.addContent(new Element("property")
+                    .setAttribute("name", "packager-logger")
+                    .setAttribute("value", Q2_LOGGER))
+                .addContent(new Element("property")
+                    .setAttribute("name", "packager-realm")
+                    .setAttribute("value", "packager"));
+        }
+
         getChannelConfig().forEach(p ->
             channelDescriptor.addContent(new Element("property")
                 .setAttribute("name", p.getName())

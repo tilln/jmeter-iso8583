@@ -396,6 +396,9 @@ The following properties control the plugin behaviour:
    (default: `deploy` subfolder from where JMeter was started).
 - `jmeter.iso8583.q2StartupTimeout` (ms): 
    How long to wait until the Q2 component starts up (default: 2 seconds).
+- jmeter.iso8583.q2PackagerLogging` (true/false):
+   Whether to include Packager log information to the JMeter log output. 
+   This may be useful in DEBUG mode to troubleshoot Packager issues. (default: false). 
 - `jmeter.iso8583.incomingConnectionTimeout` (ms): 
    How long to wait for incoming connections when running in server-mode (default: 1 minute).
 - `jmeter.iso8583.channelReconnectDelay` (ms): 
@@ -416,7 +419,6 @@ Limitations
 -----------
 
 - Minimum JMeter version 4.0
-- Packager logging is not currently implemented, so debugging Packager issues should be done outside of JMeter.
 
 Troubleshooting
 ---------------

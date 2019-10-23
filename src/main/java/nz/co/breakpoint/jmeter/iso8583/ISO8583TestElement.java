@@ -15,6 +15,7 @@ public interface ISO8583TestElement extends TestBean {
     String CHANNEL_RECONNECT_DELAY = "jmeter.iso8583.channelReconnectDelay",
         Q2_DEPLOY_DIR = "jmeter.iso8583.q2DeployDir",
         Q2_STARTUP_TIMEOUT = "jmeter.iso8583.q2StartupTimeout",
+        Q2_PACKAGER_LOGGING = "jmeter.iso8583.q2PackagerLogging",
         INCOMING_CONNECTION_TIMEOUT = "jmeter.iso8583.incomingConnectionTimeout",
         ARQC_INPUT_TAGS = "jmeter.iso8583.arqcInputTags",
         BINARY_FIELD_TAGS = "jmeter.iso8583.binaryFieldTags",

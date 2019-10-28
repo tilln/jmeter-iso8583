@@ -290,7 +290,7 @@ and the calculated ARQC value will be added as an additional subfield.
 - *IMKAC (hex)*: Clear ICC Master Key for Application Cryptogram calculation.
 - *Session Key Derivation Method*: How to derive the UDK from the Master Key.
 - *Primary Account Number (PAN)*: Input parameter for session key derivation.
-- *Account Sequence Number*: Input parameter for session key derivation (2 digits) .
+- *Account Sequence Number*: Input parameter for session key derivation (2 digits).
 - *Additional Transaction Data*: Hex digits entered here will be appended to the sequence of ARQC input bytes 
 extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
 

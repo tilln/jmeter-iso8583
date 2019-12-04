@@ -19,8 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.KSN_DESCRIPTOR;
 
-/** Adapter for jPOS JCESecurityModule with access to non-public methods via reflection
- * until jPOS 2.1.4 (https://github.com/jpos/jPOS/pull/247)
+/** Adapter for jPOS JCESecurityModule with convenience wrapper methods
  */
 public class SecurityModule extends JCESecurityModule {
 
@@ -43,11 +42,11 @@ public class SecurityModule extends JCESecurityModule {
     }
 
     public String encryptPINBlock(byte[] clearPinBlock, Key clearPinKey) throws JCEHandlerException {
-        return ISOUtil.byte2hex(getJceHandler().encryptData(clearPinBlock, clearPinKey));
+        return ISOUtil.byte2hex(this.jceHandler.encryptData(clearPinBlock, clearPinKey));
     }
 
     public String generateMAC(byte[] packedMsg, Key clearMacKey, String macAlgorithm) throws JCEHandlerException {
-        return ISOUtil.byte2hex(getJceHandler().generateMAC(packedMsg, clearMacKey, macAlgorithm));
+        return ISOUtil.byte2hex(this.jceHandler.generateMAC(packedMsg, clearMacKey, macAlgorithm));
     }
 
     public String calculateARQC(MKDMethod mkdm, SKDMethod skdm, String clearMKAC,
@@ -119,7 +118,7 @@ public class SecurityModule extends JCESecurityModule {
 
     public String encryptDESKey(String clearKey, String encryptingKey) {
         try {
-            byte[] encryptedKey = getJceHandler().encryptDESKey((short)(clearKey.length()*4),
+            byte[] encryptedKey = this.jceHandler.encryptDESKey((short)(clearKey.length()*4),
                 formDESKey(clearKey), formDESKey(encryptingKey));
             return ISOUtil.byte2hex(encryptedKey);
         } catch (JCEHandlerException e) {
@@ -141,101 +140,12 @@ public class SecurityModule extends JCESecurityModule {
     public String generateDESKey(String length) {
         try {
             Short bits = Short.parseShort(length);
-            Key key = getJceHandler().generateDESKey(bits);
+            Key key = this.jceHandler.generateDESKey(bits);
             // ensure expected key length (https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L111-L113):
             return ISOUtil.byte2hex(key.getEncoded()).substring(0, bits/4);
         } catch (JCEHandlerException e) {
             log.error("Failed to generate DES Key", e);
         }
         return "";
-    }
-
-    /* Reflection overrides.
-     * TODO remove when upgrading to jPOS 2.1.4
-     */
-    protected JCEHandler getJceHandler() {
-        try {
-            Field f = getClass().getSuperclass().getDeclaredField("jceHandler");
-            f.setAccessible(true);
-            return (JCEHandler) f.get(this);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            log.error("Failed to access jceHandler", e);
-        }
-        return null;
-    }
-
-    protected String calculateCVD(String accountNo, Key cvk, String expDate, String serviceCode) {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculateCVD",
-                    String.class, Key.class, String.class, String.class);
-            m.setAccessible(true);
-            return (String) m.invoke(this, accountNo, cvk, expDate, serviceCode);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke calculateCVD", e);
-        }
-        return "";
-    }
-
-    protected byte[] calculateDerivedKey(KeySerialNumber ksn, SecureDESKey bdk, boolean tdes, boolean dataEncryption) {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculateDerivedKey",
-                    KeySerialNumber.class, SecureDESKey.class, boolean.class, boolean.class);
-            m.setAccessible(true);
-            return (byte[]) m.invoke(this, ksn, bdk, tdes, dataEncryption);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke calculateDerivedKey", e);
-        }
-        return new byte[0];
-    }
-
-    protected byte[] specialEncrypt(byte[] data, byte[] key) {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("specialEncrypt",
-                    byte[].class, byte[].class);
-            m.setAccessible(true);
-            return (byte[]) m.invoke(this, data, key);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke specialEncrypt", e);
-        }
-        return new byte[0];
-    }
-
-    protected byte[] calculateARQC(MKDMethod mkdm, SKDMethod skdm,
-                                   SecureDESKey imkac, String accountNo, String accntSeqNo, byte[] atc,
-                                   byte[] upn, byte[] transData) {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculateARQC",
-                    MKDMethod.class, SKDMethod.class, SecureDESKey.class, String.class, String.class,
-                    byte[].class, byte[].class, byte[].class);
-            m.setAccessible(true);
-            return (byte[]) m.invoke(this, mkdm, skdm, imkac, accountNo, accntSeqNo,
-                    atc, upn, transData);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke calculateARQC", e);
-        }
-        return new byte[0];
-    }
-
-    protected byte[] calculatePINBlock(String pin, byte format, String pan) throws SMException {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculatePINBlock",
-                    String.class, byte.class, String.class);
-            m.setAccessible(true);
-            return (byte[]) m.invoke(this, pin, format, pan);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            log.error("Failed to calculate PIN Block {}", e.toString(), e);
-        }
-        return null;
-    }
-
-    protected byte[] calculateKeyCheckValue(Key clearKey) throws SMException {
-        try {
-            Method m = getClass().getSuperclass().getDeclaredMethod("calculateKeyCheckValue", Key.class);
-            m.setAccessible(true);
-            return (byte[]) m.invoke(this, clearKey);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            log.error("Failed to invoke calculateKeyCheckValue", e);
-        }
-        return new byte[0];
     }
 }

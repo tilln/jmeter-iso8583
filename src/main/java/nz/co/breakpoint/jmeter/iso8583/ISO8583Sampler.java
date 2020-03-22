@@ -1,6 +1,7 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.samplers.AbstractSampler;
@@ -179,7 +180,7 @@ public class ISO8583Sampler extends AbstractSampler
 
             String success = getSuccessResponseCode();
             if (success != null && !success.isEmpty()) {
-                if (!success.equals(rc)) {
+                if (Arrays.stream(success.split(DELIMITER_REGEX)).noneMatch(s -> s.equals(rc))) {
                     result.setSuccessful(false);
                     result.setResponseMessage("Unexpected response code");
                 }

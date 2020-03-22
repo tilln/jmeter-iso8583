@@ -6,7 +6,7 @@ import org.jpos.emv.UnknownTagNumberException;
 import org.jpos.iso.*;
 import org.jpos.tlv.ISOTaggedField;
 import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.BINARY_FIELD_TAGS;
-import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.TAG_SEPARATOR_REGEX;
+import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.DELIMITER_REGEX;
 
 /** Builds an ISOMsg from elements configured in the JMeter script.
  * Interprets the field content as binary or non-binary depending on the packager configuration.
@@ -96,7 +96,7 @@ public class MessageBuilder {
                     return true;
             }
         } catch (UnknownTagNumberException ignore) {}
-        for (String bft : JMeterUtils.getPropDefault(BINARY_FIELD_TAGS, "").split(TAG_SEPARATOR_REGEX)) {
+        for (String bft : JMeterUtils.getPropDefault(BINARY_FIELD_TAGS, "").split(DELIMITER_REGEX)) {
             if (bft.equalsIgnoreCase(tag))
                 return true;
         }

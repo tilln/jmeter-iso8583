@@ -21,5 +21,5 @@ public interface ISO8583TestElement extends TestBean {
         BINARY_FIELD_TAGS = "jmeter.iso8583.binaryFieldTags",
         KSN_DESCRIPTOR = "jmeter.iso8583.ksnDescriptor";
 
-    String TAG_SEPARATOR_REGEX = "[,;:. ]";
+    String DELIMITER_REGEX = "[,;:. ]+";
 }

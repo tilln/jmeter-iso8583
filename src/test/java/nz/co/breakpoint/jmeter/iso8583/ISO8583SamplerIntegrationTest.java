@@ -67,4 +67,16 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
         assertEquals("Timeout", res.getResponseMessage());
         assertNull(instance.getResponse());
     }
+
+    @Test
+    public void shouldValidateResponse() {
+        instance.setTimeout(5000);
+        instance.setResponseCodeField("39");
+        instance.setSuccessResponseCode("10, 00");
+        SampleResult res = instance.sample(new Entry());
+        assertTrue(res.isSuccessful());
+        instance.setSuccessResponseCode("99,88");
+        res = instance.sample(new Entry());
+        assertFalse(res.isSuccessful());
+    }
 }

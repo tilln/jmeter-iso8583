@@ -153,7 +153,8 @@ marking 4xx and 5xx responses as failures).
   The value 0 can be used to send requests without expecting any response message 
   (["fire and forget"](https://www.enterpriseintegrationpatterns.com/patterns/conversation/FireAndForget.html)).
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
-- *Success Response Code* (usually 00): Expected value for successful responses.
+- *Success Response Codes* (usually 00): Expected value for successful responses. 
+  This can be a comma-delimited list of valid values (since v1.1).
 
 If either of the Response Code entries are empty, no validation will be performed.
 

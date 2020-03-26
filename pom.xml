@@ -45,4 +45,12 @@
         </dependency>
     </dependencies>
 
+    <!-- TODO remove, only used to get jPOS snapshot: -->
+    <repositories>
+        <repository>
+            <id>jpos</id>
+            <url>http://jpos.org/maven</url>
+        </repository>
+    </repositories>
+
 </project>

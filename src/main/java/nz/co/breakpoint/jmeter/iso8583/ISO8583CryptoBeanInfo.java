@@ -45,7 +45,7 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "");
 
         createPropertyGroup("ARQC", new String[]{
-            ICCFIELD, IMKAC, SKDM, PAN, PSN, TXNDATA,
+            ICCFIELD, IMKAC, SKDM, PAN, PSN, TXNDATA, PADDING,
         });
 
         p = property(ICCFIELD);
@@ -70,6 +70,10 @@ public class ISO8583CryptoBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(DEFAULT, "00");
 
         p = property(TXNDATA);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
+        p = property(PADDING);
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
     }

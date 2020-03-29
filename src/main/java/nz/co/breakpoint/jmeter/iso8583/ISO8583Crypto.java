@@ -43,7 +43,8 @@ public class ISO8583Crypto extends AbstractTestElement
         SKDM = "skdm",
         PAN = "pan",
         PSN = "psn",
-        TXNDATA = "txnData";
+        TXNDATA = "txnData",
+        PADDING= "padding";
 
     static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
     static final String[] skdMethods;
@@ -174,7 +175,7 @@ public class ISO8583Crypto extends AbstractTestElement
 
     protected void calculateARQC(ISO8583Sampler sampler) {
         final String hexKey = getImkac(), fieldNo = getIccField(), skdm = getSkdm(),
-            txnData = getTxnData();
+            txnData = getTxnData(), padding = getPadding();
         final ISOMsg msg = sampler.getRequest();
 
         if (fieldNo == null || fieldNo.isEmpty() || !msg.hasField(fieldNo)) {
@@ -228,6 +229,10 @@ public class ISO8583Crypto extends AbstractTestElement
                 transactionData.append(emvData.getOrDefault(tag, ""));
             }
         }
+        // Optionally, apply custom padding:
+        if (padding != null && transactionData.length() % 16 != 0) { // 16 hex digits = 8 bytes
+            transactionData.append(padding);
+        }
 
         // Lastly, the actual calculation:
         final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
@@ -276,4 +281,7 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getTxnData() { return getPropertyAsString(TXNDATA); }
     public void setTxnData(String txnData) { setProperty(TXNDATA, txnData); }
+
+    public String getPadding() { return getPropertyAsString(PADDING); }
+    public void setPadding(String padding) { setProperty(PADDING, padding); }
 }

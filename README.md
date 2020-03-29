@@ -303,6 +303,8 @@ and the calculated ARQC value will be added as an additional subfield (tag `9F26
 
     **Note:** Changed behaviour! For v1.0 the data in this field is *appended* to the automatically extracted fields,
     whereas as of v1.1 data in this field overrides the extraction.
+- *Padding (hex)* (since v1.1): Padding bytes to append to transaction data before ARQC calculation 
+(leave blank for zero-padding, 80 for ISO9797-1 Method 2).
 
 <h3 id="functions">Crypto Functions (since v1.1)</h3>
 

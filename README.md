@@ -66,8 +66,8 @@ A static header string for all messages (sent and received).
 Note that some Channels use dynamic headers instead (e.g. VAPChannel).
 - *Advanced Configuration*: 
 Channel-dependent properties can be specified via *Name*/*Value* pairs.
-For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
-for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_3/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
+For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
+for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
 - *SSL Settings*: 
 For SSL/TLS connections, the *Keystore File* 
 (protected with *Keystore Password* for the file and *Key Password* for a private key) should contain:
@@ -76,7 +76,7 @@ For SSL/TLS connections, the *Keystore File*
     * Server mode: the server certificate (with public and private key).
 - *Mux Settings* (since v1.1):
     Control how the Mux finds matches between outgoing requests and incoming response messages. 
-    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_3/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
+    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
     for further details.
     * *MTI Mapping*: 3 ten-digit numbers representing how the first 3 MTI digits are mapped between request and response.
     Example (default): "0123456789 0123456789 0022446789" maps response MTI `0110` to request MTI `0100`.
@@ -376,20 +376,20 @@ Under tab "Available Plugins", select "ISO8583 Sampler", then click "Apply Chang
 
 ### Via Package from [JMeter-Plugins.org](https://jmeter-plugins.org/)
 
-Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso8583-1.0.zip) into JMeter's lib directory, then restart JMeter.
+Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso8583-1.1.zip) into JMeter's lib directory, then restart JMeter.
 
 ### Via Manual Download
 
-1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.0/jmeter-iso8583-1.0.jar) into JMeter's `lib/ext` directory.
-2. Copy the following dependencies into JMeter's `lib` directory:
-    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.3/jpos-2.1.3.jar)
-    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.62/bcprov-jdk15on-1.62.jar)
-    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.62/bcpg-jdk15on-1.62.jar)
+1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.1/jmeter-iso8583-1.1.jar) into JMeter's `lib/ext` directory.
+2. Copy the following dependencies into JMeter's `lib` directory (and optionally remove older versions of any of those jar files):
+    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.4/jpos-2.1.4.jar)
+    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.64/bcprov-jdk15on-1.64.jar)
+    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.64/bcpg-jdk15on-1.64.jar)
     * [org.jdom / jdom2](https://search.maven.org/remotecontent?filepath=org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar)
     * [org.osgi / org.osgi.core](https://search.maven.org/remotecontent?filepath=org/osgi/org.osgi.core/6.0.0/org.osgi.core-6.0.0.jar)
     * [commons-cli / commons-cli](https://search.maven.org/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)
-    * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.24/snakeyaml-1.24.jar)
-    * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.11/HdrHistogram-2.1.11.jar)
+    * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.26/snakeyaml-1.26.jar)
+    * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.jar)
     * [org.javatuples / javatuples](https://search.maven.org/remotecontent?filepath=org/javatuples/javatuples/1.2/javatuples-1.2.jar)
 3. Restart JMeter.
 

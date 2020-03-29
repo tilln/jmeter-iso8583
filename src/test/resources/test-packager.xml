@@ -92,7 +92,7 @@
       id="55"
       length="255"
       name="ICC DATA"
-      class="org.jpos.iso.IFB_LLHBINARY"
+      class="org.jpos.iso.IFA_LLLBINARY"
       emitBitmap="false"
       packager="org.jpos.tlv.packager.bertlv.BERTLVBinaryPackager"/>
 
@@ -119,7 +119,7 @@
         id="2"
         length="21"
         name="Point of Service Data"
-        class="org.jpos.iso.IFA_TTLBINARY"/>
+        class="org.jpos.iso.IFA_TTLLLBINARY"/>
   </isofieldpackager>
 
   <isofield

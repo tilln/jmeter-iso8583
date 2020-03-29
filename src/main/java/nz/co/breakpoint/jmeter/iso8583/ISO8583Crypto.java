@@ -173,7 +173,8 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
-        final String hexKey = getImkac(), fieldNo = getIccField(), skdm = getSkdm();
+        final String hexKey = getImkac(), fieldNo = getIccField(), skdm = getSkdm(),
+            txnData = getTxnData();
         final ISOMsg msg = sampler.getRequest();
 
         if (fieldNo == null || fieldNo.isEmpty() || !msg.hasField(fieldNo)) {
@@ -192,6 +193,7 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("Incorrect IMKAC length '{}' (expecting 32 hex digits)", hexKey);
             return;
         }
+        // First, collect all EMV data in a lookup map:
         final Map<String, String> emvData = new HashMap<>();
         final String arqcFieldNo;
         try {
@@ -213,16 +215,21 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("ARQC input extraction failed {}", e.toString(), e);
             return;
         }
-        final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
-            "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-        ).split(DELIMITER_REGEX);
-
+        // Next, build input data from explicit data or message fields:
         final StringBuilder transactionData = new StringBuilder();
-        for (String tag : arqcInputTags) {
-            transactionData.append(emvData.getOrDefault(tag, ""));
-        }
-        transactionData.append(getTxnData()); // additional transaction data (as hex string)
+        if (txnData != null && !txnData.isEmpty()) {
+            transactionData.append(txnData);
+        } else { // automatically extract input tags from EMV data
+            final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
+                    "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
+            ).split(DELIMITER_REGEX);
 
+            for (String tag : arqcInputTags) {
+                transactionData.append(emvData.getOrDefault(tag, ""));
+            }
+        }
+
+        // Lastly, the actual calculation:
         final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
             SKDMethod.valueOf(getSkdm()), hexKey,
             emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), getPan()),

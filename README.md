@@ -151,7 +151,8 @@ The response code can be used to distinguish failed and successful samples
 marking 4xx and 5xx responses as failures).
 - *Timeout (ms)*: A response timeout in milliseconds can be defined individually for each sampler.
   The value 0 can be used to send requests without expecting any response message 
-  (["fire and forget"](https://www.enterpriseintegrationpatterns.com/patterns/conversation/FireAndForget.html)).
+  (["fire and forget"](https://www.enterpriseintegrationpatterns.com/patterns/conversation/FireAndForget.html);
+  since v1.1).
 - *Response Code Field* (usually 39): Field number that is used to determine a sample success or failure.
 - *Success Response Codes* (usually 00): Expected value for successful responses. 
   This can be a comma-delimited list of valid values (since v1.1).
@@ -286,16 +287,22 @@ the MAC field will be the next multiple of 64 from the last field in the message
 
 #### ARQC Generation
 
-- *EMV/ICC Data Field Number* (usually 55): The ARQC input fields will be taken from **subfields** of this field, 
-and the calculated ARQC value will be added as an additional subfield.
+- *EMV/ICC Data Field Number* (usually 55): The ARQC input fields will be taken from **subfields** of this field
+(unless *Transaction Data* is specified below),
+and the calculated ARQC value will be added as an additional subfield (tag `9F26`).
 - *IMKAC (hex)*: Clear ICC Master Key for Application Cryptogram calculation.
 - *Session Key Derivation Method*: How to derive the UDK from the Master Key.
 - *Primary Account Number (PAN)*: Input parameter for session key derivation.
 - *Account Sequence Number*: Input parameter for session key derivation (2 digits).
-- *Additional Transaction Data*: Hex digits entered here will be appended to the sequence of ARQC input bytes 
-extracted from the ICC Data field. Useful if non-standard tags are to be included in the calculation.
+- *Transaction Data (hex)*: Input data for ARQC calculation (as byte sequence). 
+    If left blank, relevant fields will be automatically extracted from the ICC Data field.
 
-Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
+    Which ICC subfields are to be included in the ARQC calculation can be configured (globally) by specifying the tags
+    in the JMeter property `jmeter.iso8583.arqcInputTags` (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
+    Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
+
+    **Note:** Changed behaviour! For v1.0 the data in this field is *appended* to the automatically extracted fields,
+    whereas as of v1.1 data in this field overrides the extraction.
 
 <h3 id="functions">Crypto Functions (since v1.1)</h3>
 

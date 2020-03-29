@@ -13,6 +13,7 @@ import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.util.JMeterUtils;
 import static org.jpos.emv.EMVStandardTagType.*;
+import org.jpos.emv.IssuerApplicationData;
 import org.jpos.iso.*;
 import org.jpos.security.MKDMethod;
 import org.jpos.security.SKDMethod;
@@ -226,7 +227,17 @@ public class ISO8583Crypto extends AbstractTestElement
             ).split(DELIMITER_REGEX);
 
             for (String tag : arqcInputTags) {
-                transactionData.append(emvData.getOrDefault(tag, ""));
+                if (tag.equalsIgnoreCase(ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex())) {
+                    try {
+                        IssuerApplicationData iad = new IssuerApplicationData(emvData.getOrDefault(tag, ""));
+                        log.debug("Detected IssuerApplicationData format {}", iad.getFormat());
+                        transactionData.append(iad.getCardVerificationResults());
+                    } catch (Exception e) {
+                        log.error("Failed to parse IssuerApplicationData", e);
+                    }
+                } else {
+                    transactionData.append(emvData.getOrDefault(tag, ""));
+                }
             }
         }
         // Optionally, apply custom padding:

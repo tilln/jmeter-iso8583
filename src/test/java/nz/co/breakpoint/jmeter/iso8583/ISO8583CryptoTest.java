@@ -18,7 +18,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         ISO8583Crypto.MAC_FIELD_NO, 2*ISO8583Crypto.MAC_FIELD_NO, 3*ISO8583Crypto.MAC_FIELD_NO};
 
     static final Collection<MessageField> iccData = asMessageFields(
-        new MessageField("55.1", "ABCD", "9F1E"),
+        new MessageField("55.1", "06010A03A40000", "9F10"),
         new MessageField("55.2", "01", "9F36"),
         new MessageField("55.3", "11223344", "9F37")
     );
@@ -161,7 +161,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         String arqc = msg.getString("55.4");
 
         sampler.setFields(iccData);
-        instance.setTxnData("1122334401"); // should result in the same arqc
+        instance.setTxnData("112233440103A40000"); // should result in the same arqc
         instance.process();
         msg = sampler.getRequest();
         assertTrue(msg.hasField("55.4"));

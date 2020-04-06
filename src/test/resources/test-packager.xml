@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE isopackager PUBLIC
         "-//jPOS/jPOS Generic Packager DTD 1.0//EN"
-        "http://jpos.org/dtd/generic-subtag-packager.dtd">
+        "http://jpos.org/dtd/generic-packager-1.0.dtd">
 
 <isopackager>
   <isofield
@@ -108,6 +108,7 @@
       name="Transaction Environment Data"
       class="org.jpos.iso.IFA_LLLBINARY"
       emitBitmap="false"
+      tagSize="2" lenSize="3"
       tagMapper="org.jpos.iso.packager.TTDecimalTagMapper"
       packager="org.jpos.iso.packager.GenericTaggedFieldsPackager">
     <isofield

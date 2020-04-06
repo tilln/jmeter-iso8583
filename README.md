@@ -376,11 +376,11 @@ Under tab "Available Plugins", select "ISO8583 Sampler", then click "Apply Chang
 
 ### Via Package from [JMeter-Plugins.org](https://jmeter-plugins.org/)
 
-Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso8583-1.1.zip) into JMeter's lib directory, then restart JMeter.
+Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso8583-1.0.zip) into JMeter's lib directory, then restart JMeter.
 
 ### Via Manual Download
 
-1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.1/jmeter-iso8583-1.1.jar) into JMeter's `lib/ext` directory.
+1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.0/jmeter-iso8583-1.0.jar) into JMeter's `lib/ext` directory.
 2. Copy the following dependencies into JMeter's `lib` directory (and optionally remove older versions of any of those jar files):
     * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.4/jpos-2.1.4.jar)
     * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.64/bcprov-jdk15on-1.64.jar)

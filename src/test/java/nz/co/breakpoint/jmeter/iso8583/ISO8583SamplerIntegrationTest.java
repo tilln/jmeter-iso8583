@@ -45,6 +45,7 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
 
     @Test
     public void shouldAllowFireAndForget() {
+        instance.addField("35", ""); // simulate delay
         instance.setTimeout(0); // indicates fire-and-forget
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);

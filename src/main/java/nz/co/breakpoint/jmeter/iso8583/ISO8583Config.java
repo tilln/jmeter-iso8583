@@ -60,6 +60,7 @@ public class ISO8583Config extends ConfigTestElement
         PORT = "port",
         REUSECONNECTION = "reuseConnection",
         MAXCONNECTIONS = "maxConnections",
+        SENDMETHOD = "sendMethod",
         CHANNELCONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
@@ -269,6 +270,10 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("out").addContent(key+"-receive"))
             .addContent(new Element("ready").addContent(key+".ready"));
 
+        final String sendMethod = getSendMethod();
+        if (sendMethod != null && !sendMethod.isEmpty()) {
+            descriptor.addContent(new Element("send-request").addContent(sendMethod));
+        }
         addSSLConfig(descriptor);
 
         return deployAndStart(descriptor);
@@ -450,6 +455,9 @@ public class ISO8583Config extends ConfigTestElement
 
     public String getMaxConnections() { return getPropertyAsString(MAXCONNECTIONS); }
     public void setMaxConnections(String maxConnections) { setProperty(new StringProperty(MAXCONNECTIONS, maxConnections)); }
+
+    public String getSendMethod() { return getPropertyAsString(SENDMETHOD); }
+    public void setSendMethod(String sendMethod) { setProperty(new StringProperty(SENDMETHOD, sendMethod)); }
 
     // Need Collection getter/setter for TestBean GUI
     public Collection<ChannelConfigItem> getChannelConfig() {

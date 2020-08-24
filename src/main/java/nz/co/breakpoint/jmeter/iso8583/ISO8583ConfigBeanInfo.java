@@ -5,6 +5,7 @@ import static nz.co.breakpoint.jmeter.iso8583.ISO8583Config.*;
 import org.apache.jmeter.testbeans.gui.FileEditor;
 import org.apache.jmeter.testbeans.gui.PasswordEditor;
 import org.apache.jmeter.testbeans.gui.TableEditor;
+import org.apache.jmeter.testbeans.gui.TypeEditor;
 
 /** Describes the ISO8583Config GUI.
  * Most values cannot be left undefined (merging with other config elements is not supported).
@@ -17,7 +18,7 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         PropertyDescriptor p;
 
         createPropertyGroup("Channel", new String[]{
-            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, SENDMETHOD, CHANNELCONFIG,
+            CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, CONNECTIONSELECTION, CHANNELCONFIG,
         });
 
         p = property(CLASSNAME);
@@ -50,10 +51,11 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, "");
 
-        p = property(SENDMETHOD);
+        p = property(CONNECTIONSELECTION, TypeEditor.ComboStringEditor);
+        p.setValue(RESOURCE_BUNDLE, getBeanDescriptor().getValue(RESOURCE_BUNDLE));
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
-        p.setValue(DEFAULT, "LAST");
-        p.setValue(TAGS, new String[]{"LAST", "RR", "ALL"}); // TODO tidy up
+        p.setValue(DEFAULT, getDefaultConnectionSelection());
+        p.setValue(TAGS, connectionSelections);
 
         p = property(CHANNELCONFIG);
         p.setPropertyEditorClass(TableEditor.class);

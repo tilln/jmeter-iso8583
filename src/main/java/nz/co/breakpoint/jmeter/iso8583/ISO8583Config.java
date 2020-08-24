@@ -60,7 +60,7 @@ public class ISO8583Config extends ConfigTestElement
         PORT = "port",
         REUSECONNECTION = "reuseConnection",
         MAXCONNECTIONS = "maxConnections",
-        SENDMETHOD = "sendMethod",
+        CONNECTIONSELECTION = "connectionSelection",
         CHANNELCONFIG = "channelConfig",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
@@ -81,8 +81,15 @@ public class ISO8583Config extends ConfigTestElement
             channelClasses.put(clazz.getSimpleName(), clazz.getName());
         }
     }
+    static final String[] connectionSelections = new String[]{
+        CONNECTIONSELECTION +".LAST", // Last connected https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L349
+        CONNECTIONSELECTION +".RR", // Round robin https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L384
+        CONNECTIONSELECTION +".ALL", // All connected https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L364
+    };
 
     // For GUI...
+    static String getDefaultConnectionSelection() { return connectionSelections[0]; }
+
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
 
@@ -270,9 +277,10 @@ public class ISO8583Config extends ConfigTestElement
             .addContent(new Element("out").addContent(key+"-receive"))
             .addContent(new Element("ready").addContent(key+".ready"));
 
-        final String sendMethod = getSendMethod();
-        if (sendMethod != null && !sendMethod.isEmpty()) {
-            descriptor.addContent(new Element("send-request").addContent(sendMethod));
+        final String connectionSelection = getConnectionSelection();
+        if (connectionSelection != null && !connectionSelection.isEmpty()) {
+            descriptor.addContent(new Element("send-request")
+                .addContent(connectionSelection.replaceFirst(CONNECTIONSELECTION+".", "")));
         }
         addSSLConfig(descriptor);
 
@@ -456,8 +464,8 @@ public class ISO8583Config extends ConfigTestElement
     public String getMaxConnections() { return getPropertyAsString(MAXCONNECTIONS); }
     public void setMaxConnections(String maxConnections) { setProperty(new StringProperty(MAXCONNECTIONS, maxConnections)); }
 
-    public String getSendMethod() { return getPropertyAsString(SENDMETHOD); }
-    public void setSendMethod(String sendMethod) { setProperty(new StringProperty(SENDMETHOD, sendMethod)); }
+    public String getConnectionSelection() { return getPropertyAsString(CONNECTIONSELECTION); }
+    public void setConnectionSelection(String connectionSelection) { setProperty(new StringProperty(CONNECTIONSELECTION, connectionSelection)); }
 
     // Need Collection getter/setter for TestBean GUI
     public Collection<ChannelConfigItem> getChannelConfig() {

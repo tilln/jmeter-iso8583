@@ -57,6 +57,7 @@ public class ISO8583Sampler extends AbstractSampler
 
     // JMeter Property names (appear in script files, so don't change):
     public static final String
+        CONFIGKEY = "configKey",
         HEADER = "header",
         TRAILER = "trailer",
         FIELDS = "fields",
@@ -75,7 +76,21 @@ public class ISO8583Sampler extends AbstractSampler
 
     @Override
     public boolean applies(ConfigTestElement configElement) {
-        return configElement instanceof ISO8583TestElement;
+        if (!(configElement instanceof ISO8583TestElement)) {
+            return false;
+        }
+        if (!(configElement instanceof ISO8583Config)) {
+            // everything but connection config always applies:
+            return true;
+        }
+        String connectionReference = getConfigKey();
+        if (connectionReference == null || connectionReference.isEmpty()) {
+            // sampler is not pointing to a specific connection, so use scope rules:
+            return true;
+        }
+        boolean keyMatch = connectionReference.equals(((ISO8583Config)configElement).getConfigKey());
+        log.debug((keyMatch ? "Applying" : "Disregarding")+" {} for sampler {}", configElement.getName(), getName());
+        return keyMatch;
     }
 
     @Override
@@ -140,7 +155,7 @@ public class ISO8583Sampler extends AbstractSampler
         try {
             response = sendRequest(request);
         } catch (ISOException | NameRegistrar.NotFoundException e) {
-            log.error("Send failed {}", e.toString(), e);
+            log.error((e instanceof ISOException) ? "Send failed {}" : "Incorrect configuration {}", e.toString(), e);
             result.setResponseMessage(e.toString());
             return result;
         } finally {
@@ -201,7 +216,7 @@ public class ISO8583Sampler extends AbstractSampler
     }
 
     protected ISOMsg sendRequest(ISOMsg request) throws ISOException, NameRegistrar.NotFoundException {
-        MUX mux = QMUX.getMUX(config.getMuxName());
+        MUX mux = config.getMux();
         return mux.request(request, getTimeout());
     }
 
@@ -220,6 +235,9 @@ public class ISO8583Sampler extends AbstractSampler
 
     public void addField(String id, String value) { addField(id, value, ""); }
     public void addField(String id, String value, String tag) { component.addField(new MessageField(id, value, tag)); }
+
+    public String getConfigKey() { return getPropertyAsString(CONFIGKEY); }
+    public void setConfigKey(String configKey) { setProperty(new StringProperty(CONFIGKEY, configKey)); }
 
     public String getHeader() { return getPropertyAsString(HEADER); }
     public void setHeader(String header) { if (!prepared) setProperty(HEADER, header); }

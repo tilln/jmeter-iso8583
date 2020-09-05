@@ -39,7 +39,9 @@ Usage
 
 ![ISO8583 Connection Configuration](docs/config.png)
 
-This Configuration Element must be included to use the *ISO8583 Sampler*. 
+This Configuration Element represents a connection to the system under test.
+It must be present in the [Scope](https://jmeter.apache.org/usermanual/test_plan.html#scoping_rules)
+of an *ISO8583 Sampler*.
 
 Mandatory settings:
 - *Channel Class*: 
@@ -91,6 +93,13 @@ For SSL/TLS connections, the *Keystore File*
         |----|----------|
         |    |42 41 11  |
         |0800|41        |
+- *Connection Selection* (since v1.2):
+    * Client mode: Ignored.
+    * Server mode: If there are multiple inbound socket connections (from the system under test to JMeter),
+     this determines which of these connections to select when sending a request.
+     "Last connected" (default) sends to the most recently connected socket.
+     "Round robin" cycles through the connections one after the other.
+     "All connected" sends to all of them.
 
 ##### Implementation Details
 

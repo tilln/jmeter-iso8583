@@ -1,12 +1,22 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import org.apache.jmeter.control.GenericController;
+import org.apache.jmeter.threads.TestCompiler;
+import org.apache.jorphan.collections.ListedHashTree;
+import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ISO8583SamplerTest extends ISO8583TestBase {
 
     ISO8583Sampler instance = new ISO8583Sampler();
+
+    @Before
+    public void setup() {
+        configureSampler(instance);
+    }
 
     @Test
     public void shouldApplyClosestConfig() {
@@ -16,13 +26,39 @@ public class ISO8583SamplerTest extends ISO8583TestBase {
         ISO8583Config outer = new ISO8583Config();
         outer.setHost("NOT_THIS");
         outer.setPort("PORT");
-        instance.addTestElement(inner);
-        instance.addTestElement(outer);
 
+        ListedHashTree tree = new ListedHashTree();
+        tree.add(outer);
+        tree.add(new GenericController(), Arrays.asList(inner, instance));
+        TestCompiler compiler = new TestCompiler(tree);
+        tree.traverse(compiler);
+        compiler.configureSampler(instance);
+
+        // apply inner config, without merging or copying outer parts:
         assertEquals(inner.getPackager(), instance.config.getPackager());
         assertEquals(inner.getHost(), instance.config.getHost());
-        assertEquals(outer.getPort(), instance.config.getPort());
+        assertEquals(inner.getPort(), instance.config.getPort());
         assertEquals("", instance.config.getClassname());
+    }
+
+    @Test
+    public void shouldApplyExplicitConfig() {
+        ISO8583Config a = new ISO8583Config();
+        a.setHost("A");
+        a.setConfigKey("A");
+        ISO8583Config b = new ISO8583Config();
+        b.setHost("B");
+        b.setConfigKey("B");
+
+        instance.setConfigKey("B");
+
+        ListedHashTree tree = new ListedHashTree();
+        tree.add(new GenericController(), Arrays.asList(a, b, instance));
+        TestCompiler compiler = new TestCompiler(tree);
+        tree.traverse(compiler);
+        compiler.configureSampler(instance);
+
+        assertEquals(b.getHost(), instance.config.getHost());
     }
 
     @Test

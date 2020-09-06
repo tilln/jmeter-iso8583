@@ -63,6 +63,7 @@ Port number to connect to (outgoing from JMeter in client mode; incoming to JMet
     * Server mode: Ignored.
 
 Optional settings:
+- *Connection Reference*: This *Identifier* can be used to distinguish multiple configuration elements in a sampler's Scope.
 - *Channel Header*: 
 A static header string for all messages (sent and received). 
 Note that some Channels use dynamic headers instead (e.g. VAPChannel).
@@ -119,6 +120,10 @@ Its location is configurable via JMeter property `jmeter.iso8583.q2DeployDir`.
 
 
 <h3 id="sampler">ISO8583 Sampler</h3>
+
+The sampler needs an [*ISO8583 Connection Configuration*](#config) in its Scope.
+If there are multiple configuration elements, the optional *Connection Reference*/*Identifier*
+can be used to associate the sampler to a specific one (since v1.2).
 
 ![ISO8583 Sampler](docs/sampler.png)
 

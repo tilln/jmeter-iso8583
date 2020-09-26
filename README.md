@@ -310,6 +310,10 @@ and the calculated ARQC value will be added as an additional subfield (tag `9F26
     in the JMeter property `jmeter.iso8583.arqcInputTags` (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
     Missing ARQC input tags will be ignored, i.e. no validation is performed that all mandatory tags are present.
 
+    The JMeter property `jmeter.iso8583.arqcFromFullIADForCVNs` (default: `12,16`; since v1.2)
+    determines for which CVNs the entire Issuer Application Data (tag `9F10`)
+    is to be included in the ARQC calculation instead of the CVR portion only.
+
     **Note:** Changed behaviour! For v1.0 the data in this field is *appended* to the automatically extracted fields,
     whereas as of v1.1 data in this field overrides the extraction.
 - *Padding (hex)* (since v1.1): Padding bytes to append to transaction data before ARQC calculation 
@@ -426,6 +430,11 @@ The following properties control the plugin behaviour:
    Comma-separated list of hexadecimal EMV tag numbers that will be included in the ARQC calculation.
    This may be used to include additional (or exclude standard) tags
    (default: `9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10`).
+- `jmeter.iso8583.arqcFromFullIADForCVNs` (since v1.2):
+   Comma-separated list of hexadecimal CVNs (Cryptogram Version Numbers) for which the ARQC calculation
+   includes the full content of tag `9F10` (Issuer Application Data)
+   instead of just the CVR (Card Verification Results) portion
+   (default: `12,16` = CVN18, CVN22).
 - `jmeter.iso8583.binaryFieldTags`:
    Comma-separated list of hexadecimal tag numbers that will be interpreted as binary fields,
    in addition to binary EMV tags (default: none).

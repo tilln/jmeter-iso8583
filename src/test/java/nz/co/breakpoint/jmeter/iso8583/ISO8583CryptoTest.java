@@ -169,6 +169,24 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
+    public void shouldIncludeFullIADInARQCCalculation() {
+        sampler.setFields(iccData);
+        instance.setImkac(DEFAULT_3DES_KEY);
+        instance.setSkdm(skdMethods[0]);
+        instance.setIccField("55");
+
+        instance.setTxnData("112233440106010A03A40000"); // explicit input data
+        instance.process();
+        String expectedArqc = sampler.getRequest().getString("55.4");
+
+        JMeterUtils.setProperty(instance.FULL_IAD_CVNS, "0A"); // pretend CVN10 uses full IAD
+        instance.setTxnData(""); // automatic extraction
+        instance.process();
+
+        assertEquals(expectedArqc, sampler.getRequest().getString("55.4"));
+    }
+
+    @Test
     public void shouldDUKPTEncryptPINBlock() {
         instance.setPinField(String.valueOf(instance.PIN_FIELD_NO));
         instance.setPinKey(DEFAULT_3DES_KEY);

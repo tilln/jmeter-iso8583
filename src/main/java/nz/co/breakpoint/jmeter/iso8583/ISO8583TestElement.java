@@ -18,6 +18,7 @@ public interface ISO8583TestElement extends TestBean {
         Q2_PACKAGER_LOGGING = "jmeter.iso8583.q2PackagerLogging",
         INCOMING_CONNECTION_TIMEOUT = "jmeter.iso8583.incomingConnectionTimeout",
         ARQC_INPUT_TAGS = "jmeter.iso8583.arqcInputTags",
+        FULL_IAD_CVNS = "jmeter.iso8583.arqcFromFullIADForCVNs",
         BINARY_FIELD_TAGS = "jmeter.iso8583.binaryFieldTags",
         KSN_DESCRIPTOR = "jmeter.iso8583.ksnDescriptor";
 

@@ -227,17 +227,22 @@ public class ISO8583Crypto extends AbstractTestElement
             ).split(DELIMITER_REGEX);
 
             for (String tag : arqcInputTags) {
+                String value = emvData.getOrDefault(tag, "");
                 if (tag.equalsIgnoreCase(ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex())) {
                     try {
-                        IssuerApplicationData iad = new IssuerApplicationData(emvData.getOrDefault(tag, ""));
-                        log.debug("Detected IssuerApplicationData format {}", iad.getFormat());
-                        transactionData.append(iad.getCardVerificationResults());
+                        IssuerApplicationData iad = new IssuerApplicationData(value);
+                        String cvn = iad.getCryptogramVersionNumber();
+                        log.debug("Detected IssuerApplicationData format {} CVN{}", iad.getFormat(), Integer.parseUnsignedInt(cvn, 16));
+                        final String[] cvns = JMeterUtils.getPropDefault(FULL_IAD_CVNS, "12,16").split(DELIMITER_REGEX);
+                        if (Arrays.stream(cvns).noneMatch(it -> it.equalsIgnoreCase(cvn))) {
+                            log.debug("Applying ARQC on CVR portion of IAD (tag 9F10)");
+                            value = iad.getCardVerificationResults();
+                        }
                     } catch (Exception e) {
                         log.error("Failed to parse IssuerApplicationData", e);
                     }
-                } else {
-                    transactionData.append(emvData.getOrDefault(tag, ""));
                 }
+                transactionData.append(value);
             }
         }
         // Optionally, apply custom padding:

@@ -246,7 +246,7 @@ public class ISO8583Crypto extends AbstractTestElement
             }
         }
         // Optionally, apply custom padding:
-        if (padding != null && transactionData.length() % 16 != 0) { // 16 hex digits = 8 bytes
+        if (padding != null) {
             transactionData.append(padding);
         }
 

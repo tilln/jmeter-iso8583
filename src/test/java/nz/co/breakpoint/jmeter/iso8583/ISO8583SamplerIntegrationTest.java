@@ -32,7 +32,7 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
     @Test
     public void shouldReceiveResponse() {
         instance.addField("48.1", "1122334455667788", "9f26");
-        instance.setTimeout(5000);
+        instance.setTimeout(30000); // long enough for CI/CD build
         ISOMsg msg = instance.getRequest();
         SampleResult res = instance.sample(new Entry());
         assertNotNull(res);

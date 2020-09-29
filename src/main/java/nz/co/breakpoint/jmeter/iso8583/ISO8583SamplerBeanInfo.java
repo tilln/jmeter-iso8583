@@ -13,6 +13,13 @@ public class ISO8583SamplerBeanInfo extends ISO8583TestElementBeanInfo {
 
         PropertyDescriptor p;
 
+        createPropertyGroup("Connection", new String[]{
+            CONFIGKEY,
+        });
+        p = property(CONFIGKEY);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
         createPropertyGroup("Request", new String[]{
             HEADER, TRAILER, FIELDS,
         });

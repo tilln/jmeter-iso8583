@@ -95,7 +95,7 @@ public class ISO8583Config extends ConfigTestElement
 
     protected static transient Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
-    protected static final String CONFIG_KEY = "configKey";
+    protected static final String CONFIGKEY = "configKey";
     protected static final String Q2_LOGGER = "Q2";
 
     static {
@@ -231,7 +231,7 @@ public class ISO8583Config extends ConfigTestElement
 
     // Registers ChannelAdaptor <key>-channel and BaseChannel channel.<key>-channel
     protected QBeanSupport startChannelAdaptor() {
-        final String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIGKEY);
         Element channelDescriptor = getChannelDescriptor(key);
         if (channelDescriptor == null) return null;
         addSSLConfig(channelDescriptor);
@@ -254,7 +254,7 @@ public class ISO8583Config extends ConfigTestElement
 
     // Registers QServer <key>-server and ISOServer server.<key>-server
     protected QBeanSupport startQServer() {
-        final String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIGKEY);
         Element channelDescriptor = getChannelDescriptor(key);
         if (channelDescriptor == null) return null;
 
@@ -290,7 +290,7 @@ public class ISO8583Config extends ConfigTestElement
     // Registers QMUX mux.<key>-mux and connects with <key>-receive and <key>-send Space queues
     // Would usually be called *after* startChannelAdaptor or startQServer.
     protected QBeanSupport startMux() {
-        final String key = getPropertyAsString(CONFIG_KEY);
+        final String key = getPropertyAsString(CONFIGKEY);
 
         // Build QBean deployment descriptor in memory
         // (note the in/out queues need to be cross-wired):
@@ -386,11 +386,13 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
 
-    public String getMuxName() { return getPropertyAsString(CONFIG_KEY)+"-mux"; }
+    public QMUX getMux() throws NameRegistrar.NotFoundException { return (QMUX)QMUX.getMUX(getMuxName()); }
 
-    public String getQServerName() { return getPropertyAsString(CONFIG_KEY)+"-server"; }
+    public String getMuxName() { return getConfigKey()+"-mux"; }
 
-    public String getChannelAdaptorName() { return getPropertyAsString(CONFIG_KEY)+"-channel"; }
+    public String getQServerName() { return getConfigKey()+"-server"; }
+
+    public String getChannelAdaptorName() { return getConfigKey()+"-channel"; }
 
     protected boolean isServer() { return getHost() == null || getHost().isEmpty(); }
 
@@ -398,11 +400,11 @@ public class ISO8583Config extends ConfigTestElement
     public void testStarted() {
         startQ2();
 
-        // Create a distinct key for naming this element's QBeans.
-        // Needs to be a JMeter property so it gets cloned for the sampler's addTestElement().
-        String configKey = String.format("jmeter-%08x", hashCode());
-        setProperty(CONFIG_KEY, configKey);
-        log.debug("'{}' setting up QBeans {}", getName(), configKey);
+        if (getConfigKey() == null || getConfigKey().isEmpty()) {
+            // Create a distinct key for naming this element's QBeans.
+            setConfigKey(String.format("jmeter-%08x", hashCode()));
+        }
+        log.debug("'{}' setting up QBeans {}", getName(), getConfigKey());
 
         if (isServer()) {
             QBeanSupport qserver = startQServer();
@@ -446,6 +448,9 @@ public class ISO8583Config extends ConfigTestElement
     public void testEnded(String s) { testEnded(); }
 
     // Accessors for mapping to TestBean GUI elements...
+    public String getConfigKey() { return getPropertyAsString(CONFIGKEY); }
+    public void setConfigKey(String configKey) { setProperty(new StringProperty(CONFIGKEY, configKey)); }
+
     public String getClassname() { return getPropertyAsString(CLASSNAME); }
     public void setClassname(String classname) { setProperty(new StringProperty(CLASSNAME, classname)); }
 

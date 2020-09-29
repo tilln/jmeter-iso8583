@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOPackager;
@@ -58,7 +59,7 @@ public class ISO8583TestBase {
         config.setHost("localhost");
         config.setPort("10000");
         config.setReuseConnection(true);
-        config.setProperty(ISO8583Config.CONFIG_KEY, "jmeter");
+        config.setConfigKey("jmeter");
         return config;
     }
 
@@ -89,6 +90,11 @@ public class ISO8583TestBase {
         msg.set(11, String.format("%06d", System.currentTimeMillis() % 1000000));
         msg.set(41, "JMETER");
         return msg;
+    }
+
+    public void configureSampler(ISO8583Sampler sampler) {
+        // Avoid NPE when TestCompiler tries to configure sampler with null fields
+        sampler.setProperty(new CollectionProperty(ISO8583Component.FIELDS, new ArrayList<>()));
     }
 
     public void configureSampler(ISO8583Sampler sampler, ISO8583Config config, MessageField... fields) {

@@ -17,6 +17,14 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
 
         PropertyDescriptor p;
 
+        createPropertyGroup("Connection", new String[]{
+            CONFIGKEY,
+        });
+
+        p = property(CONFIGKEY);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setValue(DEFAULT, "");
+
         createPropertyGroup("Channel", new String[]{
             CLASSNAME, PACKAGER, HEADER, HOST, PORT, REUSECONNECTION, MAXCONNECTIONS, CONNECTIONSELECTION, CHANNELCONFIG,
         });

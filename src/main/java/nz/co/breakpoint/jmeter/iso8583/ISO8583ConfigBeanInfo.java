@@ -106,5 +106,14 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
                 new String[]{"MTI", "Key Fields"}));
         p.setValue(TableEditor.OBJECT_PROPERTIES,
                 new String[]{"name", MuxKeyConfigItem.VALUE}); // name is a standard TestElement member
+
+        createPropertyGroup("RequestListener", new String[]{
+            REQUESTLISTENER,
+        });
+
+        p = property(REQUESTLISTENER);
+        p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+        p.setPropertyEditorClass(FileEditor.class);
+        p.setValue(DEFAULT, "");
     }
 }

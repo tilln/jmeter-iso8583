@@ -101,6 +101,23 @@ For SSL/TLS connections, the *Keystore File*
      "Last connected" (default) sends to the most recently connected socket.
      "Round robin" cycles through the connections one after the other.
      "All connected" sends to all of them.
+- *Request Listener* (since v1.2):
+    A *BSH Script File* (BeanShell) can be specified that will be interpreted at run time for every **incoming** request.
+    It can be used to respond to network management (0800) messages from the system under test, such as sign-on, key exchange etc.
+
+    Example (refer jPOS documentation of the similar [BSH Filter](https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch05/channel_filters.adoc#bshfilter) for more details):
+
+    ```groovy
+    if ("0800".equals(message.getMTI())) {
+        message.setResponseMTI();
+        message.set(39, "00");
+        if ("101".equals(message.getString(70))) { // key change message
+            // store message details in JMeter property:
+            org.apache.jmeter.util.JMeterUtils.getJMeterProperties().put("KEY", message.getString(48));
+        }
+        source.send(message);
+    }
+    ```
 
 ##### Implementation Details
 

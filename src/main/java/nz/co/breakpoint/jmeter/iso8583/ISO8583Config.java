@@ -16,6 +16,7 @@ import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.jdom2.Element;
 import org.jdom2.output.XMLOutputter;
+import org.jpos.bsh.BSHRequestListener;
 import org.jpos.iso.*;
 import org.jpos.iso.channel.*;
 import org.jpos.iso.packager.GenericPackager;
@@ -62,6 +63,7 @@ public class ISO8583Config extends ConfigTestElement
         MAXCONNECTIONS = "maxConnections",
         CONNECTIONSELECTION = "connectionSelection",
         CHANNELCONFIG = "channelConfig",
+        REQUESTLISTENER = "requestListener",
         KEYSTORE = "keystore",
         STOREPASSWORD = "storePassword",
         KEYPASSWORD = "keyPassword",
@@ -200,6 +202,19 @@ public class ISO8583Config extends ConfigTestElement
         return descriptor;
     }
 
+    protected Element addRequestListener(Element descriptor) {
+        final String requestListener = getRequestListener();
+        if (requestListener != null && !requestListener.isEmpty()) {
+            descriptor.addContent(new Element("request-listener")
+                .setAttribute("class", BSHRequestListener.class.getName())
+                .setAttribute("logger", Q2_LOGGER)
+                .addContent(new Element("property")
+                    .setAttribute("name", "source")
+                    .setAttribute("value", requestListener)));
+        }
+        return descriptor;
+    }
+
     protected Element getChannelAdaptorDescriptor(String key) {
         // https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
@@ -283,6 +298,7 @@ public class ISO8583Config extends ConfigTestElement
                 .addContent(connectionSelection.replaceFirst(CONNECTIONSELECTION+".", "")));
         }
         addSSLConfig(descriptor);
+        addRequestListener(descriptor);
 
         return deployAndStart(descriptor);
     }
@@ -314,6 +330,8 @@ public class ISO8583Config extends ConfigTestElement
             }
             descriptor.addContent(muxKey);
         });
+        addRequestListener(descriptor);
+
         return deployAndStart(descriptor);
     }
 
@@ -498,6 +516,9 @@ public class ISO8583Config extends ConfigTestElement
 
     public boolean isReuseConnection() { return getPropertyAsBoolean(REUSECONNECTION); }
     public void setReuseConnection(boolean reuseConnection) { setProperty(new BooleanProperty(REUSECONNECTION, reuseConnection)); }
+
+    public String getRequestListener() { return getPropertyAsString(REQUESTLISTENER); }
+    public void setRequestListener(String requestListener) { setProperty(new StringProperty(REQUESTLISTENER, requestListener)); }
 
     public String getMtiMapping() { return getPropertyAsString(MTIMAPPING); }
     public void setMtiMapping(String mtiMapping) { setProperty(new StringProperty(MTIMAPPING, mtiMapping)); }

@@ -4,7 +4,7 @@
     <groupId>nz.co.breakpoint</groupId>
     <artifactId>jmeter-iso8583</artifactId>
     <packaging>jar</packaging>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <name>${project.artifactId}</name>
     <description>Apache JMeter plugin for load testing of payment gateways and switches via ISO 8583 messaging</description>
     <url>https://github.com/tilln/jmeter-iso8583</url>

@@ -124,7 +124,7 @@ public class MessageBuilder {
             return isBinaryField(subfield, mfp.getISOMsgPackager());
         }
         // This is how ISOMsg.set() decides whether to interpret as binary:
-        // https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/ISOMsg.java#L238-L239
+        // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/ISOMsg.java#L238-L239
         return fp instanceof ISOBinaryFieldPackager;
     }
 }

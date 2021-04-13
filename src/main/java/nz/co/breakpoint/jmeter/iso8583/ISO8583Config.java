@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * Advanced, Channel-dependent configuration properties can be specified via name/value pairs.
  *
  * For example, <i>srcid</i> and <i>dstid</i> for
- * <a href="https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237">
+ * <a href="https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237">
  * VAPChannel's Base1Header</a><br />
  * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
  */
@@ -84,9 +84,9 @@ public class ISO8583Config extends ConfigTestElement
         }
     }
     static final String[] connectionSelections = new String[]{
-        CONNECTIONSELECTION +".LAST", // Last connected https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L349
-        CONNECTIONSELECTION +".RR", // Round robin https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L384
-        CONNECTIONSELECTION +".ALL", // All connected https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L364
+        CONNECTIONSELECTION +".LAST", // Last connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L349
+        CONNECTIONSELECTION +".RR", // Round robin https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L384
+        CONNECTIONSELECTION +".ALL", // All connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L364
     };
 
     // For GUI...
@@ -179,8 +179,8 @@ public class ISO8583Config extends ConfigTestElement
         if (getKeystore() == null || getKeystore().isEmpty()) return descriptor;
 
         // socketFactory attr vs property
-        // https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L252
-        // https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/iso/ChannelAdaptor.java#L466
+        // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L252
+        // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/ChannelAdaptor.java#L467
         descriptor
             .addContent(isServer() ?
                 new Element("attr")
@@ -216,7 +216,7 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     protected Element getChannelAdaptorDescriptor(String key) {
-        // https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/channel_adaptor.adoc
+        // https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch08/channel_adaptor.adoc
         Element descriptor = new Element("channel-adaptor")
             .setAttribute("name", getChannelAdaptorName())
             .setAttribute("logger", Q2_LOGGER)
@@ -229,7 +229,7 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     protected Element getOneShotChannelAdaptorDescriptor(String key) {
-        // https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/one_shot_channel_adaptor.adoc
+        // https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch08/one_shot_channel_adaptor.adoc
         Element descriptor = new Element("qbean")
                 .setAttribute("name", getChannelAdaptorName())
                 .setAttribute("logger", Q2_LOGGER)
@@ -279,7 +279,7 @@ public class ISO8583Config extends ConfigTestElement
             return null;
         }
         // Build QBean deployment descriptor in memory
-        // https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/qserver.adoc
+        // https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch08/qserver.adoc
         Element descriptor = new Element("qserver")
             .setAttribute("name", getQServerName())
             .setAttribute("logger", Q2_LOGGER)
@@ -310,7 +310,7 @@ public class ISO8583Config extends ConfigTestElement
 
         // Build QBean deployment descriptor in memory
         // (note the in/out queues need to be cross-wired):
-        // https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/qmux.adoc
+        // https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch08/qmux.adoc
         Element descriptor = new Element("qmux")
             .setAttribute("name", getMuxName())
             .setAttribute("logger", Q2_LOGGER)
@@ -336,7 +336,7 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     // Mimic Q2 deployment of a descriptor file, followed by starting the QBean,
-    // https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/q2/Q2.java#L560
+    // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/Q2.java#L560
     // but using more accessible QFactory methods:
     protected QBeanSupport deployAndStart(Element descriptor) {
         if (log.isDebugEnabled()) {

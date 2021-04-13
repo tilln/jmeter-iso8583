@@ -95,7 +95,7 @@ public class ISO8583Crypto extends AbstractTestElement
         if (!newKey.equals(this.macKey)) {
             /* Only assign new key if it is different, to prevent leaking MacEngineKeys in JCEHandler
              * that only compare keys by reference:
-             * https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
+             * https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
              */
             log.debug("New MAC key instance assigned");
             this.macKey = newKey;

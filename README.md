@@ -69,8 +69,8 @@ A static header string for all messages (sent and received).
 Note that some Channels use dynamic headers instead (e.g. VAPChannel).
 - *Advanced Configuration*: 
 Channel-dependent properties can be specified via *Name*/*Value* pairs.
-For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
-for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_4/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
+For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
+for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
 - *SSL Settings*: 
 For SSL/TLS connections, the *Keystore File* 
 (protected with *Keystore Password* for the file and *Key Password* for a private key) should contain:
@@ -79,7 +79,7 @@ For SSL/TLS connections, the *Keystore File*
     * Server mode: the server certificate (with public and private key).
 - *Mux Settings* (since v1.1):
     Control how the Mux finds matches between outgoing requests and incoming response messages. 
-    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
+    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
     for further details.
     * *MTI Mapping*: 3 ten-digit numbers representing how the first 3 MTI digits are mapped between request and response.
     Example (default): "0123456789 0123456789 0022446789" maps response MTI `0110` to request MTI `0100`.
@@ -105,7 +105,7 @@ For SSL/TLS connections, the *Keystore File*
     A *BSH Script File* (BeanShell) can be specified that will be interpreted at run time for every **incoming** request.
     It can be used to respond to network management (0800) messages from the system under test, such as sign-on, key exchange etc.
 
-    Example (refer jPOS documentation of the similar [BSH Filter](https://github.com/jpos/jPOS/blob/v2_1_4/doc/src/asciidoc/ch05/channel_filters.adoc#bshfilter) for more details):
+    Example (refer jPOS documentation of the similar [BSH Filter](https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch05/channel_filters.adoc#bshfilter) for more details):
 
     ```groovy
     if ("0800".equals(message.getMTI())) {
@@ -417,9 +417,9 @@ Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso858
 
 1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.1/jmeter-iso8583-1.1.jar) into JMeter's `lib/ext` directory.
 2. Copy the following dependencies into JMeter's `lib` directory (and optionally remove older versions of any of those jar files):
-    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.4/jpos-2.1.4.jar)
-    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.64/bcprov-jdk15on-1.64.jar)
-    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.64/bcpg-jdk15on-1.64.jar)
+    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.6/jpos-2.1.6.jar)
+    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.67/bcprov-jdk15on-1.67.jar)
+    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.67/bcpg-jdk15on-1.67.jar)
     * [org.jdom / jdom2](https://search.maven.org/remotecontent?filepath=org/jdom/jdom2/2.0.6/jdom2-2.0.6.jar)
     * [org.osgi / org.osgi.core](https://search.maven.org/remotecontent?filepath=org/osgi/org.osgi.core/6.0.0/org.osgi.core-6.0.0.jar)
     * [commons-cli / commons-cli](https://search.maven.org/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)

@@ -17,9 +17,9 @@ import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Sends an ISOMsg to a jPOS QMUX provided by an {@link ISO8583Config} element, and receives a response.<br />
+/** Sends an ISOMsg to a jPOS QMUX provided by an {@link ISO8583Config} element, and receives a response.<br>
  * Message fields can be specified in the associated TestBean GUI, or via {@link ISO8583Component} config elements
- * in scope. Preprocessors may also modify fields.<br />
+ * in scope. Preprocessors may also modify fields.<br>
  * Sampler lifecycle:
  * <pre>
     JMeterThread.executeSamplePackage

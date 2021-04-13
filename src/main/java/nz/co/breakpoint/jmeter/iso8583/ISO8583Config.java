@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  * For example, <i>srcid</i> and <i>dstid</i> for
  * <a href="https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237">
- * VAPChannel's Base1Header</a><br />
+ * VAPChannel's Base1Header</a><br>
  * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
  */
 public class ISO8583Config extends ConfigTestElement

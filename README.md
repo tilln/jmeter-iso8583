@@ -20,7 +20,7 @@ A so-called Packager is required to transform ("pack") the message into its bina
 This plugin uses a jPOS [Generic Packager](http://jpos.org/doc/proguide.pdf#%5B%7B%22num%22%3A1736%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C54%2C133.877%2Cnull%5D)
 that needs to be configured with an XML file.
 
-Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/master/jpos/src/dist/cfg/packager)
+Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/v2_1_6/jpos/src/dist/cfg/packager)
 may be used as-is or with few customisations.
 
 #### Sample Message
@@ -473,3 +473,63 @@ Limitations
 Troubleshooting
 ---------------
 Inspect the JMeter log, after increasing the log level to DEBUG, e.g. `jmeter -Lnz.co.breakpoint.jmeter.iso8583=DEBUG`.
+
+FAQ
+---
+
+### Why am I getting timeouts?
+
+The three common reasons for response timeouts are:
+1. The sampler does not receive any response.
+2. The sampler does receive a response but fails to unpack it.
+3. The sampler does receive a response and unpacks it but no request can be matched.
+
+The debug log should contain Channel output similar to the following:   
+
+```
+2022-02-22 12:34:56,789 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [send] Out: 0800 000001
+2022-02-22 12:34:56,987 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [receive]  In: 0810 000001
+```
+
+If only the first log line is present, no response was received (case 1 above).
+It is likely that the request is incorrectly formed and the remote system discarded it, 
+so checking its logs/traces may be helpful.
+Double-check the *Packager Configuration* file! 
+This defines how a request is packed (or response is unpacked) before (after) it goes over the wire.
+
+If both lines are present, a response was in fact received (cases 2 and 3 above).
+
+If the second log line instead contains an error like the following, then the response failed to unpack (case 2 above).
+Double-check the *Packager Configuration* file!
+```
+2022-02-22 12:34:56,987 ERROR n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [receive] org.jpos.iso.SOMECLASSNAMEHERE: Problem unpacking field ...
+```
+
+
+If the second log line contains no error then it is likely that the plugin did not find a matching request (case 3 above).
+Double-check the *Mux Settings*!
+These define MTI values and message fields that are used for matching, and the default settings may not work. 
+
+### How do I define the Packager Configuration?
+
+The two common sources are:
+1. A messaging/interface specification,
+2. Message logs/traces of an existing test (or production) system.
+
+Every message field needs an appropriate jPOS Field Packager
+(a Java class that translates between the logical and binary value of the message field). 
+Unfortunately, not all classes are well documented, however, their class names follow a quite consistent naming scheme.
+
+Sometimes, an [existing configuration](https://github.com/jpos/jPOS/tree/v2_1_6/jpos/src/dist/cfg/packager)
+can be a starting point or even be sufficient for performance testing purposes
+(as not all fields need to be correctly defined but only the ones used in the JMeter test). 
+
+If a specification is available, matching classes can be determined in a systematic way,
+otherwise message traces may have to be inspected and interpreted.
+
+For example, suppose the trace for an 0800 Network Management message starts with the bytes `30 38 30 30` (hexadecimal),
+which are the MTI's ASCII representation, then the Field Packager class should be 
+[`org.jpos.iso.IFA_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/IFA_NUMERIC.java).
+Otherwise, if the trace starts with `08 00` (hex),
+i.e. the MTI in [BCD](https://en.wikipedia.org/wiki/Binary-coded_decimal), the class should be
+[`org.jpos.iso.IFB_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/iso/IFB_NUMERIC.java).

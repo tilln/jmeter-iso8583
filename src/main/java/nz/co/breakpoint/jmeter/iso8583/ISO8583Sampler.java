@@ -149,6 +149,18 @@ public class ISO8583Sampler extends AbstractSampler
 
         ISOMsg request = getRequest();
 
+        // Request details...
+        result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
+        result.setSamplerData(MessagePrinter.asString(request, true));
+        try {
+            byte[] bytes = request.pack(), header = request.getHeader(), trailer = request.getTrailer();
+            log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
+            result.setSentBytes((long) bytes.length +
+                    (header != null ? header.length : 0) + (trailer != null ? trailer.length : 0));
+        } catch (ISOException e) {
+            log.error("Packager error on request '{}'. Check config! {}", getName(), e.toString());
+        }
+
         // Send the request...
         log.debug("sampleStart");
         result.sampleStart();
@@ -161,18 +173,6 @@ public class ISO8583Sampler extends AbstractSampler
         } finally {
             log.debug("sampleEnd");
             result.sampleEnd();
-        }
-
-        // Request details...
-        result.setRequestHeaders("Host: "+config.getHost()+"\nPort: "+config.getPort());
-        result.setSamplerData(MessagePrinter.asString(request,true));
-        try {
-            byte[] bytes = request.pack(), header = request.getHeader(), trailer = request.getTrailer();
-            log.debug("Packed request '{}'", ISOUtil.byte2hex(bytes));
-            result.setSentBytes((long) bytes.length +
-                (header != null ? header.length : 0) + (trailer != null ? trailer.length : 0));
-        } catch (ISOException e) {
-            log.error("Packager error on request '{}'. Check config! {}", getName(), e.toString());
         }
 
         // Response validation...

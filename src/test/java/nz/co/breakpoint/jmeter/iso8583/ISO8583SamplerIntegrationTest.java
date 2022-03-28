@@ -4,6 +4,9 @@ import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.SampleResult;
 import org.jpos.iso.ISOMsg;
 import org.junit.*;
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.junit.Assert.*;
 
 public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
@@ -79,5 +82,26 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
         instance.setSuccessResponseCode("99,88");
         res = instance.sample(new Entry());
         assertFalse(res.isSuccessful());
+    }
+
+    @Test // Issue 24
+    public void testConcurrency() throws InterruptedException {
+        AtomicBoolean exceptionThrown = new AtomicBoolean(false);
+        for (int i=0; i<100; i++) {
+            Thread t = new Thread(() -> {
+                for (int j=0; j<100; j++) {
+                    try {
+                        instance.sample(null);
+                    } catch (ConcurrentModificationException e) {
+                        e.printStackTrace();
+                        exceptionThrown.set(true);
+                    }
+                    Thread.yield();
+                }
+            });
+            t.start();
+            t.join();
+        }
+        assertEquals("Expected no ConcurrentModificationException", false, exceptionThrown.get());
     }
 }

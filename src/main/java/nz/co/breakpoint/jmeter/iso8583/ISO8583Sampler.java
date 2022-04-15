@@ -235,6 +235,7 @@ public class ISO8583Sampler extends AbstractSampler
 
     public void addField(String id, String value) { addField(id, value, ""); }
     public void addField(String id, String value, String tag) { component.addField(new MessageField(id, value, tag)); }
+    public void removeField(String id) { component.removeField(id); }
 
     public String getConfigKey() { return getPropertyAsString(CONFIGKEY); }
     public void setConfigKey(String configKey) { setProperty(new StringProperty(CONFIGKEY, configKey)); }

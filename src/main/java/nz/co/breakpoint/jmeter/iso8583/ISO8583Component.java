@@ -61,6 +61,10 @@ public class ISO8583Component extends ConfigTestElement
         fields.forEach(this::addField);
     }
 
+    protected void removeField(String id) {
+        getFieldsAsProperty().remove(id);
+    }
+
     // Need Collection getter/setter for TestBean GUI
     public Collection<MessageField> getFields() {
         Collection<MessageField> fields = new ArrayList<>();

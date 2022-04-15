@@ -144,13 +144,13 @@ public class ISO8583Config extends ConfigTestElement
 
         Element channelDescriptor = new Element("channel")
             .setAttribute("name", name)
-            .setAttribute("class", getFullChannelClassName())
+            .setAttribute("class", channelClass)
             .setAttribute("packager", GenericPackager.class.getName())
             .setAttribute("header", getHeader())
             .setAttribute("logger", Q2_LOGGER)
             .addContent(new Element("property")
                 .setAttribute("name", "packager-config")
-                .setAttribute("value", getPackager()))
+                .setAttribute("value", packager))
             .addContent(new Element("property")
                 .setAttribute("name", "host")
                 .setAttribute("value", getHost()))
@@ -176,7 +176,8 @@ public class ISO8583Config extends ConfigTestElement
     }
 
     protected Element addSSLConfig(Element descriptor) {
-        if (getKeystore() == null || getKeystore().isEmpty()) return descriptor;
+        final String keystore = getKeystore();
+        if (keystore == null || keystore.isEmpty()) return descriptor;
 
         // socketFactory attr vs property
         // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L252
@@ -191,7 +192,7 @@ public class ISO8583Config extends ConfigTestElement
                     .setAttribute("value", GenericSSLSocketFactory.class.getName()))
             .addContent(new Element("property")
                 .setAttribute("name", "keystore")
-                .setAttribute("value", getKeystore()))
+                .setAttribute("value", keystore))
             .addContent(new Element("property")
                 .setAttribute("name", "storepassword")
                 .setAttribute("value", getStorePassword()))
@@ -283,7 +284,7 @@ public class ISO8583Config extends ConfigTestElement
         Element descriptor = new Element("qserver")
             .setAttribute("name", getQServerName())
             .setAttribute("logger", Q2_LOGGER)
-            .addContent(getChannelDescriptor(key))
+            .addContent(channelDescriptor)
             .addContent(new Element("attr")
                 .setAttribute("name", "port")
                 .setAttribute("type", Integer.class.getName())

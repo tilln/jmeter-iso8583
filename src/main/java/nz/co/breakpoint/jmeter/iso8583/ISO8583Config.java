@@ -364,7 +364,7 @@ public class ISO8583Config extends ConfigTestElement
 
     protected void stopMux() {
         try {
-            stopAndUndeploy((QMUX)QMUX.getMUX(getMuxName()));
+            stopAndUndeploy(getMux());
         } catch (NameRegistrar.NotFoundException ignoreBecauseItWasntRunning) {}
     }
 
@@ -425,8 +425,8 @@ public class ISO8583Config extends ConfigTestElement
         log.debug("'{}' setting up QBeans {}", getName(), getConfigKey());
 
         if (isServer()) {
-            QBeanSupport qserver = startQServer();
-            if (qserver == null) return;
+            startQServer();
+            startMux();
 
             long waitTime = JMeterUtils.getPropDefault(INCOMING_CONNECTION_TIMEOUT, 60000);
             long abortTime = System.currentTimeMillis()+waitTime;
@@ -442,8 +442,8 @@ public class ISO8583Config extends ConfigTestElement
             }
         } else {
             startChannelAdaptor();
+            startMux();
         }
-        startMux();
     }
 
     @Override

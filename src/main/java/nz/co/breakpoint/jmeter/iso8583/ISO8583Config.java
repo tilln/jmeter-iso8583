@@ -299,7 +299,6 @@ public class ISO8583Config extends ConfigTestElement
                 .addContent(connectionSelection.replaceFirst(CONNECTIONSELECTION+".", "")));
         }
         addSSLConfig(descriptor);
-        addRequestListener(descriptor);
 
         return deployAndStart(descriptor);
     }

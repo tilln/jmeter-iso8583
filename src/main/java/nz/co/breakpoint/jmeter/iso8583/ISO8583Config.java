@@ -2,6 +2,7 @@ package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,14 +84,28 @@ public class ISO8583Config extends ConfigTestElement
             channelClasses.put(clazz.getSimpleName(), clazz.getName());
         }
     }
-    static final String[] connectionSelections = new String[]{
-        CONNECTIONSELECTION +".LAST", // Last connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L349
-        CONNECTIONSELECTION +".RR", // Round robin https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L384
-        CONNECTIONSELECTION +".ALL", // All connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L364
-    };
+
+    public enum ConnectionSelection {
+        LAST, // Last connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L349
+        RR, // Round robin https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L384
+        ALL; // All connected https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L364
+
+        // Tags must match ResourceBundle and appear in script files:
+        public static ConnectionSelection fromTag(String connectionSelection) {
+            return valueOf(connectionSelection.replaceFirst(CONNECTIONSELECTION+".", ""));
+        }
+
+        public static String[] tags() {
+            return Arrays.stream(values()).map(ConnectionSelection::toTag).toArray(String[]::new);
+        }
+
+        public String toTag() {
+            return CONNECTIONSELECTION + "." + toString();
+        }
+    }
 
     // For GUI...
-    static String getDefaultConnectionSelection() { return connectionSelections[0]; }
+    static String getDefaultConnectionSelection() { return ConnectionSelection.LAST.toTag(); }
 
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
@@ -296,7 +311,7 @@ public class ISO8583Config extends ConfigTestElement
         final String connectionSelection = getConnectionSelection();
         if (connectionSelection != null && !connectionSelection.isEmpty()) {
             descriptor.addContent(new Element("send-request")
-                .addContent(connectionSelection.replaceFirst(CONNECTIONSELECTION+".", "")));
+                .addContent(ConnectionSelection.fromTag(connectionSelection).toString()));
         }
         addSSLConfig(descriptor);
 

@@ -63,7 +63,7 @@ public class ISO8583ConfigBeanInfo extends ISO8583TestElementBeanInfo {
         p.setValue(RESOURCE_BUNDLE, getBeanDescriptor().getValue(RESOURCE_BUNDLE));
         p.setValue(NOT_UNDEFINED, Boolean.TRUE);
         p.setValue(DEFAULT, getDefaultConnectionSelection());
-        p.setValue(TAGS, connectionSelections);
+        p.setValue(TAGS, ConnectionSelection.tags());
 
         p = property(CHANNELCONFIG);
         p.setPropertyEditorClass(TableEditor.class);

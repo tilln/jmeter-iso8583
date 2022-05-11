@@ -17,7 +17,6 @@ import org.apache.jmeter.testelement.property.StringProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.jdom2.Element;
 import org.jdom2.output.XMLOutputter;
-import org.jpos.bsh.BSHRequestListener;
 import org.jpos.iso.*;
 import org.jpos.iso.channel.*;
 import org.jpos.iso.packager.GenericPackager;
@@ -222,7 +221,7 @@ public class ISO8583Config extends ConfigTestElement
         final String requestListener = getRequestListener();
         if (requestListener != null && !requestListener.isEmpty()) {
             descriptor.addContent(new Element("request-listener")
-                .setAttribute("class", BSHRequestListener.class.getName())
+                .setAttribute("class", GroovyRequestListener.class.getName())
                 .setAttribute("logger", Q2_LOGGER)
                 .addContent(new Element("property")
                     .setAttribute("name", "source")

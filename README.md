@@ -102,22 +102,34 @@ For SSL/TLS connections, the *Keystore File*
      "Round robin" cycles through the connections one after the other.
      "All connected" sends to all of them.
 - *Request Listener* (since v1.2):
-    A *BSH Script File* (BeanShell) can be specified that will be interpreted at run time for every **incoming** request.
-    It can be used to respond to network management (0800) messages from the system under test, such as sign-on, key exchange etc.
+    A Groovy *Script File* (before v1.3 BeanShell *BSH Script File*) can be specified that will be executed
+    for every **incoming** request.
 
-    Example (refer jPOS documentation of the similar [BSH Filter](https://github.com/jpos/jPOS/blob/v2_1_6/doc/src/asciidoc/ch05/channel_filters.adoc#bshfilter) for more details):
+    It can be used to respond to network management (0800) messages from the system under test,
+    such as sign-on, key exchange etc.
 
+    The script will have access to the following variables:
+
+    |Name     |Meaning|Type|
+    |---------|-------|-----|
+    |`message`|The incoming message|[`org.jpos.iso.ISOMsg`](http://jpos.org/doc/javadoc/org/jpos/iso/ISOMsg.html)|
+    |`source` |The jPOS Channel that received the message and where the response should be sent back to|[`org.jpos.iso.ISOSource`](http://jpos.org/doc/javadoc/org/jpos/iso/ISOSource.html)|
+    |`log`    |The JMeter logger (for class `n.c.b.j.i.GroovyRequestListener`)|[`org.slf4j.Logger`](https://www.slf4j.org/api/org/slf4j/Logger.html)|
+    |`props`  |JMeter Properties|[`java.util.Properties`](https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html)|
+
+    Example:
     ```groovy
-    if ("0800".equals(message.getMTI())) {
-        message.setResponseMTI();
-        message.set(39, "00");
-        if ("101".equals(message.getString(70))) { // key change message
-            // store message details in JMeter property:
-            org.apache.jmeter.util.JMeterUtils.getJMeterProperties().put("KEY", message.getString(48));
+    if (message.getMTI() == "0800") {                // ignore other message types
+        message.setResponseMTI();                    // turn it into 0810
+        message.set(39, "00");                       // successful
+        if (message.getString(70) == "101") {        // key change message
+            props.put("KEY", message.getString(48)); // store message field in JMeter property
         }
-        source.send(message);
+        source.send(message);                        // send response back
     }
     ```
+
+    **Note:** Changed behaviour! For v1.2 this is a BeanShell script but as of v1.3 a Groovy script.
 
 ##### Implementation Details
 

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.management.*;
 import org.apache.jmeter.config.ConfigTestElement;
+import org.apache.jmeter.engine.util.NoThreadClone;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.BooleanProperty;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * For even more advanced use cases, above XML files may still be used and copied to the Q2 deploy folder.
  */
 public class ISO8583Config extends ConfigTestElement
-        implements ISO8583TestElement, TestBean, Serializable, TestStateListener {
+        implements ISO8583TestElement, TestBean, Serializable, TestStateListener, NoThreadClone {
 
     private static final long serialVersionUID = 1L;
 

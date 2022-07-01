@@ -1,11 +1,12 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
-import javax.script.*;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import org.apache.jmeter.util.JMeterUtils;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.jpos.core.Configurable;
 import org.jpos.core.Configuration;
 import org.jpos.iso.ISOMsg;
@@ -19,47 +20,39 @@ public class GroovyRequestListener implements ISORequestListener, Configurable {
 
     private static final Logger log = LoggerFactory.getLogger(GroovyRequestListener.class);
 
-    protected String scriptFilename;
-    protected CompiledScript compiledScript;
-    protected Bindings bindings;
+    protected Script script;
 
     @Override
     public void setConfiguration(Configuration cfg) {
-        ScriptEngine engine = new ScriptEngineManager().getEngineByName("groovy");
-        if (engine == null) {
-            log.error("Groovy script engine not found! Check JMeter installation.");
-            return;
-        }
-        bindings = engine.createBindings();
-        bindings.put("log", log);
-        bindings.put("props", JMeterUtils.getJMeterProperties());
+        GroovyShell shell = new GroovyShell();
 
-        scriptFilename = cfg.get("source");
-        log.info("Compiling script {}", scriptFilename);
+        String filename = cfg.get("source");
+        log.info("Compiling script {}", filename);
 
-        try (Reader fileReader = new FileReader(scriptFilename)) {
-            compiledScript = ((Compilable) engine).compile(fileReader);
-        } catch (FileNotFoundException e) {
-            log.error("Script file not found {}", scriptFilename);
-        } catch (ScriptException e) {
-            log.error("Error compiling script {}, error: {}", scriptFilename, e.getMessage());
+        try {
+            script = shell.parse(new File(filename));
+        } catch (CompilationFailedException e) {
+            log.error("Script compilation failure: {}", e.getMessage());
         } catch (IOException e) {
-            log.error("Error closing file {}", scriptFilename, e);
+            log.error("Error accessing file {}", filename, e);
         }
     }
 
     @Override
     public boolean process(ISOSource source, ISOMsg message) {
-        if (compiledScript != null) {
-            bindings.put("message", message);
-            bindings.put("source", source);
-            try {
-                compiledScript.eval(bindings);
-                return true;
-            } catch (ScriptException e) {
-                log.error("Error in script {}", scriptFilename, e.getCause());
-            }
+        if (script == null) {
+            return false;
         }
-        return false;
+        Binding bindings = script.getBinding();
+        bindings.setVariable("message", message);
+        bindings.setVariable("source", source);
+        bindings.setVariable("log", log);
+        bindings.setVariable("props", JMeterUtils.getJMeterProperties());
+        try {
+            script.run();
+        } catch (Exception e) {
+            log.error("Error in script", e);
+        }
+        return true;
     }
 }

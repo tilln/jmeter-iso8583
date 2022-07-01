@@ -443,17 +443,25 @@ public class ISO8583Config extends ConfigTestElement
             startQServer();
             startMux();
 
+            ISOServer server;
+            try {
+                server = ISOServer.getServer(getQServerName());
+            } catch (NameRegistrar.NotFoundException e) {
+                log.error("ISOServer not found", e);
+                return;
+            }
+
             long waitTime = JMeterUtils.getPropDefault(INCOMING_CONNECTION_TIMEOUT, 60000);
             long abortTime = System.currentTimeMillis()+waitTime;
-            for (; waitTime > 0; waitTime = abortTime - System.currentTimeMillis()) {
+            boolean connected = false;
+            while (!connected && waitTime > 0) {
                 log.info("Waiting {} seconds for incoming client connection", waitTime/1000);
                 ISOUtil.sleep(1000);
-                try {
-                    if (ISOServer.getServer(getQServerName()).getLastConnectedISOChannel() != null) break;
-                } catch (NameRegistrar.NotFoundException e) {
-                    log.error("ISOServer not found", e);
-                    return;
-                }
+                waitTime = abortTime - System.currentTimeMillis();
+                connected = (server.getActiveConnections() != 0);
+            }
+            if (!connected) {
+                log.error("No incoming connection established");
             }
         } else {
             startChannelAdaptor();

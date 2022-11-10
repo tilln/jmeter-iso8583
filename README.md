@@ -499,8 +499,8 @@ The three common reasons for response timeouts are:
 The debug log should contain Channel output similar to the following:   
 
 ```
-2022-02-22 12:34:56,789 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [send] Out: 0800 000001
-2022-02-22 12:34:56,987 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [receive]  In: 0810 000001
+2022-02-22 12:34:56,789 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:PORT) [send] Out: 0800 000001
+2022-02-22 12:34:56,987 DEBUG n.c.b.j.i.Q2: (channel/HOSTNAME:PORT) [receive]  In: 0810 000001
 ```
 
 If only the first log line is present, no response was received (case 1 above).
@@ -514,7 +514,7 @@ If both lines are present, a response was in fact received (cases 2 and 3 above)
 If the second log line instead contains an error like the following, then the response failed to unpack (case 2 above).
 Double-check the *Packager Configuration* file!
 ```
-2022-02-22 12:34:56,987 ERROR n.c.b.j.i.Q2: (channel/HOSTNAME:POST) [receive] org.jpos.iso.SOMECLASSNAMEHERE: Problem unpacking field ...
+2022-02-22 12:34:56,987 ERROR n.c.b.j.i.Q2: (channel/HOSTNAME:PORT) [receive] org.jpos.iso.SOMECLASSNAMEHERE: Problem unpacking field ...
 ```
 
 

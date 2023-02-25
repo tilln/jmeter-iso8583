@@ -1,13 +1,12 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.util.Collection;
-import org.apache.jmeter.util.JMeterUtils;
+import java.util.stream.Collectors;
 import org.jpos.iso.ISOMsg;
 import org.junit.Before;
 import org.junit.Test;
+import static org.jpos.emv.EMVStandardTagType.ISSUER_APPLICATION_DATA_0x9F10;
 import static org.junit.Assert.*;
-import static nz.co.breakpoint.jmeter.iso8583.ISO8583Crypto.skdMethods;
-import static nz.co.breakpoint.jmeter.iso8583.ISO8583TestElement.ARQC_INPUT_TAGS;
 
 public class ISO8583CryptoTest extends ISO8583TestBase {
 
@@ -16,11 +15,18 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
 
     static final int[] possibleMACFields = new int[]{
         ISO8583Crypto.MAC_FIELD_NO, 2*ISO8583Crypto.MAC_FIELD_NO, 3*ISO8583Crypto.MAC_FIELD_NO};
-
     static final Collection<MessageField> iccData = asMessageFields(
-        new MessageField("55.1", "06010A03A40000", "9F10"),
-        new MessageField("55.2", "01", "9F36"),
-        new MessageField("55.3", "11223344", "9F37")
+        new MessageField("55.1", "000000000001", "9F02"),
+        new MessageField("55.2", "000000000000", "9F03"),
+        new MessageField("55.3", "0554", "9F1A"),
+        new MessageField("55.4", "0000000000", "95"),
+        new MessageField("55.5", "0554", "5F2A"),
+        new MessageField("55.6", "230123", "9A"),
+        new MessageField("55.7", "01", "9C"),
+        new MessageField("55.8", "11223344", "9F37"),
+        new MessageField("55.9", "5C00", "82"),
+        new MessageField("55.10", "0001", "9F36"),
+        new MessageField("55.11", "06011203000000", "9F10")
     );
 
     @Before
@@ -117,73 +123,51 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     public void shouldCalculateARQC() {
         sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
-        instance.setSkdm(skdMethods[0]);
         instance.setIccField("55");
         instance.process();
 
         ISOMsg msg = sampler.getRequest();
-        assertTrue(msg.hasField("55.4"));
-        assertTrue(msg.getString("55.4").matches("[0-9A-F]{16}"));
-    }
-
-    @Test
-    public void shouldHaveConfigurableARQCInputTags() {
-        JMeterUtils.setProperty(ARQC_INPUT_TAGS, "9F37");
-        instance.setImkac(DEFAULT_3DES_KEY);
-        instance.setSkdm(skdMethods[0]);
-        instance.setIccField("55");
-
-        sampler.setFields(iccData);
-        instance.process();
-
-        String arqc = sampler.getRequest().getString("55.4");
-        assertNotNull(arqc);
-
-        sampler.setFields(iccData);
-        sampler.addField("55.4", "99", "9F36"); // should not change the previous arqc
-        instance.process();
-
-        assertEquals(arqc, sampler.getRequest().getString("55.5"));
+        assertTrue(msg.hasField("55.12"));
+        assertTrue(msg.getString("55.12").matches("[0-9A-F]{16}"));
     }
 
     @Test
     public void shouldOverrideARQCInputTags() {
         sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
-        instance.setSkdm(skdMethods[0]);
         instance.setIccField("55");
 
         instance.setTxnData(""); // automatic extraction
         instance.process();
 
         ISOMsg msg = sampler.getRequest();
-        assertTrue(msg.hasField("55.4"));
-        String arqc = msg.getString("55.4");
+        assertTrue(msg.hasField("55.12"));
+        String arqc = msg.getString("55.12");
 
         sampler.setFields(iccData);
-        instance.setTxnData("112233440103A40000"); // should result in the same arqc
+        instance.setTxnData(iccData.stream().map(MessageField::getContent).collect(Collectors.joining())); // should result in the same arqc
         instance.process();
         msg = sampler.getRequest();
-        assertTrue(msg.hasField("55.4"));
-        assertEquals(arqc, msg.getString("55.4"));
+        assertTrue(msg.hasField("55.12"));
+        assertEquals(arqc, msg.getString("55.12"));
     }
 
     @Test
-    public void shouldIncludeFullIADInARQCCalculation() {
+    public void shouldHandleDifferentIssuersForARQCCalculation() {
         sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
-        instance.setSkdm(skdMethods[0]);
         instance.setIccField("55");
-
-        instance.setTxnData("112233440106010A03A40000"); // explicit input data
-        instance.process();
-        String expectedArqc = sampler.getRequest().getString("55.4");
-
-        JMeterUtils.setProperty(instance.FULL_IAD_CVNS, "0A"); // pretend CVN10 uses full IAD
-        instance.setTxnData(""); // automatic extraction
-        instance.process();
-
-        assertEquals(expectedArqc, sampler.getRequest().getString("55.4"));
+        for (String iad : new String[]{
+                "06010A03000000", // Visa CVN10
+                "06011203000000", // Visa CVN18
+                "0210A00000000000000000000000000000FF", // MCHIP CVN10
+                "0114020000044000DAC10000000000000000", // MCHIP CVN14
+        }) {
+            sampler.setFields(iccData.stream().filter(f -> !ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex().equals(f.getTag())).collect(Collectors.toList()));
+            sampler.addField("55.11", iad, ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex());
+            instance.process();
+            assertTrue(sampler.getRequest().hasField("55.12"));
+        }
     }
 
     @Test

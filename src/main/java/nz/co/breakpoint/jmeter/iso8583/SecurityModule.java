@@ -86,7 +86,7 @@ public class SecurityModule extends JCESecurityModule {
             KeySerialNumber ksn = parseKSN(keySerialNumber);
             SecureDESKey bdk = formKEYfromClearComponents(LENGTH_DES3_2KEY, TYPE_BDK, clearBDK);
 
-            // https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/security/jceadapter/JCESecurityModule.java#L2462-L2463
+            // https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/security/jceadapter/JCESecurityModule.java#L2462-L2463
             byte[] derivedKey = calculateDerivedKey(ksn, bdk, true, false);
             log.debug("UDK={}", ISOUtil.byte2hex(derivedKey));
 
@@ -141,7 +141,7 @@ public class SecurityModule extends JCESecurityModule {
         try {
             Short bits = Short.parseShort(length);
             Key key = this.jceHandler.generateDESKey(bits);
-            // ensure expected key length (https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L111-L113):
+            // ensure expected key length (https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L111-L113):
             return ISOUtil.byte2hex(key.getEncoded()).substring(0, bits/4);
         } catch (JCEHandlerException e) {
             log.error("Failed to generate DES Key", e);

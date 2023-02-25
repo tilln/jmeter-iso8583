@@ -5,20 +5,22 @@ import java.security.Key;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.jmeter.processor.PreProcessor;
 import org.apache.jmeter.samplers.Sampler;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.util.JMeterUtils;
 import static org.jpos.emv.EMVStandardTagType.*;
 import org.jpos.emv.IssuerApplicationData;
+import org.jpos.emv.cryptogram.CryptogramSpec;
 import org.jpos.iso.*;
 import org.jpos.security.MKDMethod;
 import org.jpos.security.SKDMethod;
 import org.jpos.security.jceadapter.JCEHandlerException;
 import org.jpos.tlv.ISOTaggedField;
+import org.jpos.tlv.TLVList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,19 +43,12 @@ public class ISO8583Crypto extends AbstractTestElement
         KSNFIELD = "ksnField",
         ICCFIELD = "iccField",
         IMKAC = "imkac",
-        SKDM = "skdm",
         PAN = "pan",
         PSN = "psn",
         TXNDATA = "txnData",
         PADDING= "padding";
 
     static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
-    static final String[] skdMethods;
-    static {
-        SKDMethod[] all = SKDMethod.values();
-        skdMethods = new String[all.length];
-        for (int i=0; i<all.length; ++i) skdMethods[i] = all[i].name();
-    }
 
     protected transient SecurityModule securityModule = new SecurityModule();
     protected transient Key macKey, pinKey;
@@ -95,7 +90,7 @@ public class ISO8583Crypto extends AbstractTestElement
         if (!newKey.equals(this.macKey)) {
             /* Only assign new key if it is different, to prevent leaking MacEngineKeys in JCEHandler
              * that only compare keys by reference:
-             * https://github.com/jpos/jPOS/blob/v2_1_6/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
+             * https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
              */
             log.debug("New MAC key instance assigned");
             this.macKey = newKey;
@@ -175,7 +170,7 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
-        final String hexKey = getImkac(), fieldNo = getIccField(), skdm = getSkdm(),
+        final String hexKey = getImkac(), fieldNo = getIccField(),
             txnData = getTxnData(), padding = getPadding();
         final ISOMsg msg = sampler.getRequest();
 
@@ -187,16 +182,12 @@ public class ISO8583Crypto extends AbstractTestElement
             log.debug("No IMKAC defined, skipping ARQC calculation");
             return;
         }
-        if (skdm == null || skdm.isEmpty()) {
-            log.debug("No SKDM defined, skipping ARQC calculation");
-            return;
-        }
         if (hexKey.length() != 32) {
             log.error("Incorrect IMKAC length '{}' (expecting 32 hex digits)", hexKey);
             return;
         }
         // First, collect all EMV data in a lookup map:
-        final Map<String, String> emvData = new HashMap<>();
+        final Map<Integer, String> emvData = new HashMap<>();
         final String arqcFieldNo;
         try {
             final ISOComponent emvField = msg.getComponent(fieldNo);
@@ -205,59 +196,56 @@ public class ISO8583Crypto extends AbstractTestElement
             for (Object c : emvField.getChildren().values()) {
                 if (c instanceof ISOTaggedField) {
                     ISOTaggedField f = (ISOTaggedField) c;
+                    int tag = Integer.parseInt(f.getTag(), 16);
                     if (f.getValue() instanceof String)
-                        emvData.put(f.getTag(), (String)f.getValue());
+                        emvData.put(tag, (String)f.getValue());
                     else if (f.getBytes() != null && f.getBytes().length != 0)
-                        emvData.put(f.getTag(), ISOUtil.byte2hex(f.getBytes()));
+                        emvData.put(tag, ISOUtil.byte2hex(f.getBytes()));
                 } else {
-                    log.debug("Ignoring non-tagged field {}", c);
+                    log.warn("Ignoring non-tagged EMV field {}", c);
                 }
             }
         } catch (ISOException e) {
             log.error("ARQC input extraction failed {}", e.toString(), e);
             return;
         }
-        // Next, build input data from explicit data or message fields:
-        final StringBuilder transactionData = new StringBuilder();
-        if (txnData != null && !txnData.isEmpty()) {
-            transactionData.append(txnData);
-        } else { // automatically extract input tags from EMV data
-            final String[] arqcInputTags = JMeterUtils.getPropDefault(ARQC_INPUT_TAGS,
-                    "9F02,9F03,9F1A,95,5F2A,9A,9C,9F37,82,9F36,9F10"
-            ).split(DELIMITER_REGEX);
+        // Then, parse IAD for cryptogram version and key derivation methods:
+        IssuerApplicationData iad;
+        try {
+            iad = new IssuerApplicationData(emvData.get(ISSUER_APPLICATION_DATA_0x9F10.getTagNumber()));
+        } catch (Exception e) {
+            log.error("Failed to parse Issuer Application Data", e);
+            return;
+        }
+        CryptogramSpec cSpec = iad.getCryptogramSpec();
+        MKDMethod mkdMethod = cSpec.getMKDMethod();
+        SKDMethod skdMethod = cSpec.getSKDMethod();
+        log.debug("Detected MKD Method {}, SKD Method {}", mkdMethod, skdMethod);
 
-            for (String tag : arqcInputTags) {
-                String value = emvData.getOrDefault(tag, "");
-                if (tag.equalsIgnoreCase(ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex())) {
-                    try {
-                        IssuerApplicationData iad = new IssuerApplicationData(value);
-                        String cvn = iad.getCryptogramVersionNumber();
-                        log.debug("Detected IssuerApplicationData format {} CVN{}", iad.getFormat(), Integer.parseUnsignedInt(cvn, 16));
-                        final String[] cvns = JMeterUtils.getPropDefault(FULL_IAD_CVNS, "12,16").split(DELIMITER_REGEX);
-                        if (Arrays.stream(cvns).noneMatch(it -> it.equalsIgnoreCase(cvn))) {
-                            log.debug("Applying ARQC on CVR portion of IAD (tag 9F10)");
-                            value = iad.getCardVerificationResults();
-                        }
-                    } catch (Exception e) {
-                        log.error("Failed to parse IssuerApplicationData", e);
-                    }
-                }
-                transactionData.append(value);
+        // Next, build input data from explicit data or message fields:
+        String transactionData = txnData;
+        if (transactionData == null || transactionData.isEmpty()) {
+            TLVList tlvList = new TLVList();
+            emvData.entrySet().stream().forEach(e -> tlvList.append(e.getKey(), e.getValue()));
+            transactionData = cSpec.getDataBuilder().buildARQCRequest(tlvList, iad);
+            if (transactionData.contains("null")) {
+                log.warn("EMV data incomplete?");
             }
         }
         // Optionally, apply custom padding:
         if (padding != null) {
-            transactionData.append(padding);
+            transactionData += padding;
         }
 
         // Lastly, the actual calculation:
-        final String arqc = securityModule.calculateARQC(MKDMethod.OPTION_A,
-            SKDMethod.valueOf(getSkdm()), hexKey,
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumberHex(), getPan()),
-            emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumberHex(), getPsn()),
-            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumberHex(), ""),
-            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumberHex(), ""),
-            transactionData.toString());
+        final String arqc = securityModule.calculateARQC(mkdMethod, skdMethod, hexKey,
+            Optional.ofNullable(getPan())
+                .orElse(emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumber(), "")),
+            Optional.ofNullable(getPsn())
+                .orElse(emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_SEQUENCE_NUMBER_0x5F34.getTagNumber(), "")),
+            emvData.getOrDefault(APPLICATION_TRANSACTION_COUNTER_0x9F36.getTagNumber(), ""),
+            emvData.getOrDefault(UNPREDICTABLE_NUMBER_0x9F37.getTagNumber(), ""),
+            transactionData);
 
         sampler.addField(arqcFieldNo, arqc, APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex());
     }
@@ -285,9 +273,6 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getImkac() { return getPropertyAsString(IMKAC); }
     public void setImkac(String imkac) { setProperty(IMKAC, imkac); }
-
-    public String getSkdm() { return getPropertyAsString(SKDM); }
-    public void setSkdm(String skdm) { setProperty(SKDM, skdm); }
 
     public String getPan() { return getPropertyAsString(PAN); }
     public void setPan(String pan) { setProperty(PAN, pan); }

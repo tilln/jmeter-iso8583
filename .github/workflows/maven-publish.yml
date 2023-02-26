@@ -5,7 +5,7 @@ name: Maven Package
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   build:
@@ -28,7 +28,11 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
-    - name: Publish to GitHub Packages Apache Maven
-      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-      env:
-        GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+    - name: Create Release
+      uses: tix-factory/release-manager@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+        mode: uploadReleaseAsset
+        filePath: target/jmeter-iso8583-*.jar
+        assetName: jar
+        tag: ${{ format('release-number-{0}', env.BUILD_NUMBER) }}

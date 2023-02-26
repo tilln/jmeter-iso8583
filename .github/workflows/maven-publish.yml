@@ -1,14 +1,15 @@
 name: Github Release
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - master
 
 jobs:
-  deploy:
-    name: Deploy git tag
+  release-on-push:
     runs-on: ubuntu-latest
-
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -24,12 +25,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
-
-    - name: Create Release
-      uses: xresloader/upload-to-github-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Release
+      uses: rymndhng/release-on-push-action@master
       with:
-        file: "target/*.jar"
-        tags: true
-        draft: true
+        tag_prefix: ""

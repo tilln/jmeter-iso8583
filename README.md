@@ -1,7 +1,4 @@
-# jmeter-iso8583 [![travis][travis-image]][travis-url]
-
-[travis-image]: https://travis-ci.com/tilln/jmeter-iso8583.svg?branch=master
-[travis-url]: https://travis-ci.com/tilln/jmeter-iso8583
+# jmeter-iso8583 ![github-actions](https://github.com/tilln/jmeter-iso8583/actions/workflows/release.yml/badge.svg)
 
 Overview
 --------

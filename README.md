@@ -1,4 +1,4 @@
-# jmeter-iso8583 ![github-actions](https://github.com/tilln/jmeter-iso8583/actions/workflows/release.yml/badge.svg)
+# jmeter-iso8583 [![github-actions](https://github.com/tilln/jmeter-iso8583/actions/workflows/release.yml/badge.svg)](https://github.com/tilln/jmeter-iso8583/actions/workflows/release.yml)
 
 Overview
 --------
@@ -85,12 +85,12 @@ For SSL/TLS connections, the *Keystore File*
         messages if the *MTI* column is empty.
         
         Example: Override default key to use fields 42, 41, 11 for all messages, 
-        except *0800* messages for which field 41 is used.
+        except *0800* messages for which fields 7 and 11 are used.
 
-        |MTI |Key Fields|
-        |----|----------|
-        |    |42 41 11  |
-        |0800|41        |
+        |MTI | Key Fields |
+        |----|------------|
+        |    | 42, 41, 11 |
+        |0800| 7, 11      |
 - *Connection Selection* (since v1.2):
     * Client mode: Ignored.
     * Server mode: If there are multiple inbound socket connections (from the system under test to JMeter),

@@ -89,8 +89,8 @@ For SSL/TLS connections, the *Keystore File*
 
         |MTI | Key Fields |
         |----|------------|
-        |    | 42, 41, 11 |
-        |0800| 7, 11      |
+        |    | 42 41 11   |
+        |0800| 7 11       |
 - *Connection Selection* (since v1.2):
     * Client mode: Ignored.
     * Server mode: If there are multiple inbound socket connections (from the system under test to JMeter),
@@ -505,6 +505,12 @@ The debug log should contain Channel output similar to the following:
 ```
 
 If only the first log line is present, no response was received (case 1 above).
+
+It is possible that the Channel did not interpret the received byte sequence correctly, for example
+the first bytes that contain the message lengths, and therefore does not recognise the end of the message.
+Double-check that the *Channel Class* is appropriate!
+Consider using Wireshark or similar tools to confirm whether and what data arrives at the TCP port.
+
 It is likely that the request is incorrectly formed and the remote system discarded it, 
 so checking its logs/traces may be helpful.
 Double-check the *Packager Configuration* file! 

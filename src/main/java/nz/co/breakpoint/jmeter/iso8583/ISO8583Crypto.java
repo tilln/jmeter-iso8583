@@ -103,13 +103,20 @@ public class ISO8583Crypto extends AbstractTestElement
         int macField = (fixedMacField != null && !fixedMacField.isEmpty()) ? Integer.parseInt(fixedMacField) :
             ((msg.getMaxField() - 1)/MAC_FIELD_NO + 1)*MAC_FIELD_NO; // round up to the next multiple of 64
 
-        int macLength = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField).getLength();
+        ISOFieldPackager fp = ((ISOBasePackager)msg.getPackager()).getFieldPackager(macField);
+        if (!(fp instanceof ISOBinaryFieldPackager)) {
+            log.error("MAC cannot be packed into non-binary field "+fp.getClass());
+            return;
+        }
+        int macLength = fp.getLength();
+        int packedLength = fp.getMaxPackedLength();
+
         final String dummyMac = String.format("%0" + 2*macLength + "d", 0);
         msg.set(macField, dummyMac);
         try {
             byte[] packedMsg = msg.pack();
             // cut off MAC bytes and don't include them in calculation:
-            String mac = securityModule.generateMAC(Arrays.copyOf(packedMsg, packedMsg.length-macLength),
+            String mac = securityModule.generateMAC(Arrays.copyOf(packedMsg, packedMsg.length-packedLength),
                 macKey, macAlgorithm);
             sampler.addField(String.valueOf(macField), ISOUtil.padright(mac, 2*macLength, 'f'));
         } catch (ISOException e) {

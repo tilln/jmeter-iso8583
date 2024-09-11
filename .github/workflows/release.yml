@@ -4,31 +4,32 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+-SNAPSHOT'
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: temurin
-        cache: maven
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: temurin
+          cache: maven
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
 
-    - name: Release
-      uses: marvinpinto/action-automatic-releases@latest
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        automatic_release_tag: latest
-        title: Release ${{ github.ref_name }}
-        files: |
-          target/*.jar
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "target/*.jar"
+          prerelease: ${{ endsWith( github.ref_name, '-SNAPSHOT' ) }}
+          makeLatest: ${{ ! endsWith( github.ref_name, '-SNAPSHOT' ) }}
+          allowUpdates: "true"

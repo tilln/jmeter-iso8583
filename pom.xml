@@ -33,7 +33,7 @@
             <name>Till Neunast</name>
             <email>till.neunast@breakpoint.co.nz</email>
             <organization>Breakpoint</organization>
-            <organizationUrl>http://breakpoint.co.nz</organizationUrl>
+            <organizationUrl>https://breakpoint.co.nz</organizationUrl>
         </developer>
     </developers>
 
@@ -66,7 +66,7 @@
     <repositories>
         <repository>
             <id>jpos</id>
-            <url>http://jpos.org/maven</url>
+            <url>https://jpos.org/maven</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

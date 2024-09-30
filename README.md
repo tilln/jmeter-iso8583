@@ -342,15 +342,18 @@ and the calculated ARQC value will be added as an additional subfield (tag `9F26
 
     **Note:** Changed behaviour! For v1.0 the data in this field is *appended* to the automatically extracted fields,
     whereas as of v1.1 data in this field overrides the extraction.
-- *Padding (hex)* (since v1.1): Optional, additional padding bytes to append to transaction data before ARQC calculation 
-(leave blank for zero-padding, 80 for ISO9797-1 Method 2).
 
-**Note:** Changed behaviour! Until v1.2 the input field
+**Note: Changed behaviour!**
+- Until v1.2 the input field
   *Session Key Derivation Method* (how to derive the UDK from the Master Key) had to be set explicitly.
   As of v1.3 this is obsolete as it will be determined automatically by evaluating the Issuer Application Data field (tag `9F10`). 
 
-  Likewise, as of v1.3, the JMeter properties `jmeter.iso8583.arqcInputTags` and `jmeter.iso8583.arqcFromFullIADForCVNs` have been 
+- Likewise, as of v1.3, the JMeter properties `jmeter.iso8583.arqcInputTags` and `jmeter.iso8583.arqcFromFullIADForCVNs` have been 
   removed as jPOS [handles](https://github.com/jpos/jPOS/pull/499) this cryptogram logic internally.
+
+- From v1.1 - v1.3 the field *Padding (hex)* would specify optional, additional padding bytes to append to transaction data 
+  before ARQC calculation. As of v1.4 the padding will be [handled](https://github.com/jpos/jPOS/pull/577) automatically,
+  depending on the Issuer Application Data.
 
 <h3 id="functions">Crypto Functions (since v1.1)</h3>
 

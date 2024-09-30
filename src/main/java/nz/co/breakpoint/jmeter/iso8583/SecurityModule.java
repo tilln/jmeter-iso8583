@@ -1,8 +1,5 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.Key;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.jmeter.util.JMeterUtils;
@@ -12,7 +9,6 @@ import org.jpos.core.ConfigurationException;
 import org.jpos.core.SimpleConfiguration;
 import org.jpos.iso.ISOUtil;
 import org.jpos.security.*;
-import org.jpos.security.jceadapter.JCEHandler;
 import org.jpos.security.jceadapter.JCEHandlerException;
 import org.jpos.security.jceadapter.JCESecurityModule;
 import org.slf4j.Logger;
@@ -139,7 +135,7 @@ public class SecurityModule extends JCESecurityModule {
 
     public String generateDESKey(String length) {
         try {
-            Short bits = Short.parseShort(length);
+            short bits = Short.parseShort(length);
             Key key = this.jceHandler.generateDESKey(bits);
             // ensure expected key length (https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L111-L113):
             return ISOUtil.byte2hex(key.getEncoded()).substring(0, bits/4);

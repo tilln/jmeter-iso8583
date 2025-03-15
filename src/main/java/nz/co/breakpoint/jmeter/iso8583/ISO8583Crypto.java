@@ -16,8 +16,6 @@ import static org.jpos.emv.EMVStandardTagType.*;
 import org.jpos.emv.IssuerApplicationData;
 import org.jpos.emv.cryptogram.CryptogramSpec;
 import org.jpos.iso.*;
-import org.jpos.security.MKDMethod;
-import org.jpos.security.SKDMethod;
 import org.jpos.security.jceadapter.JCEHandlerException;
 import org.jpos.tlv.ISOTaggedField;
 import org.jpos.tlv.TLVList;
@@ -45,8 +43,7 @@ public class ISO8583Crypto extends AbstractTestElement
         IMKAC = "imkac",
         PAN = "pan",
         PSN = "psn",
-        TXNDATA = "txnData",
-        PADDING= "padding";
+        TXNDATA = "txnData";
 
     static final String[] macAlgorithms = new String[]{"", "DESEDE", "ISO9797ALG3MACWITHISO7816-4PADDING"};
 
@@ -90,7 +87,7 @@ public class ISO8583Crypto extends AbstractTestElement
         if (!newKey.equals(this.macKey)) {
             /* Only assign new key if it is different, to prevent leaking MacEngineKeys in JCEHandler
              * that only compare keys by reference:
-             * https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
+             * https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/security/jceadapter/JCEHandler.java#L442
              */
             log.debug("New MAC key instance assigned");
             this.macKey = newKey;
@@ -177,8 +174,7 @@ public class ISO8583Crypto extends AbstractTestElement
     }
 
     protected void calculateARQC(ISO8583Sampler sampler) {
-        final String hexKey = getImkac(), fieldNo = getIccField(),
-            txnData = getTxnData(), padding = getPadding();
+        final String hexKey = getImkac(), fieldNo = getIccField();
         final ISOMsg msg = sampler.getRequest();
 
         if (fieldNo == null || fieldNo.isEmpty() || !msg.hasField(fieldNo)) {
@@ -216,7 +212,7 @@ public class ISO8583Crypto extends AbstractTestElement
             log.error("ARQC input extraction failed {}", e.toString(), e);
             return;
         }
-        // Then, parse IAD for cryptogram version and key derivation methods:
+        // Then, parse IAD for cryptogram spec:
         IssuerApplicationData iad;
         try {
             iad = new IssuerApplicationData(emvData.get(ISSUER_APPLICATION_DATA_0x9F10.getTagNumber()));
@@ -225,27 +221,21 @@ public class ISO8583Crypto extends AbstractTestElement
             return;
         }
         CryptogramSpec cSpec = iad.getCryptogramSpec();
-        MKDMethod mkdMethod = cSpec.getMKDMethod();
-        SKDMethod skdMethod = cSpec.getSKDMethod();
-        log.debug("Detected MKD Method {}, SKD Method {}", mkdMethod, skdMethod);
+        log.debug("Detected cryptogram {}", cSpec.getDataBuilder().getClass().getSimpleName());
 
         // Next, build input data from explicit data or message fields:
-        String transactionData = txnData;
+        String transactionData = getTxnData();
         if (transactionData == null || transactionData.isEmpty()) {
             TLVList tlvList = new TLVList();
-            emvData.entrySet().stream().forEach(e -> tlvList.append(e.getKey(), e.getValue()));
-            transactionData = cSpec.getDataBuilder().buildARQCRequest(tlvList, iad);
+            emvData.forEach(tlvList::append);
+            transactionData = cSpec.getDataBuilder().buildARQCRequest_padded(tlvList, iad);
             if (transactionData.contains("null")) {
                 log.warn("EMV data incomplete?");
             }
         }
-        // Optionally, apply custom padding:
-        if (padding != null) {
-            transactionData += padding;
-        }
 
         // Lastly, the actual calculation:
-        final String arqc = securityModule.calculateARQC(mkdMethod, skdMethod, hexKey,
+        final String arqc = securityModule.calculateARQC(cSpec.getMKDMethod(), cSpec.getSKDMethod(), hexKey,
             Optional.ofNullable(getPan())
                 .orElse(emvData.getOrDefault(APPLICATION_PRIMARY_ACCOUNT_NUMBER_0x5A.getTagNumber(), "")),
             Optional.ofNullable(getPsn())
@@ -289,7 +279,4 @@ public class ISO8583Crypto extends AbstractTestElement
 
     public String getTxnData() { return getPropertyAsString(TXNDATA); }
     public void setTxnData(String txnData) { setProperty(TXNDATA, txnData); }
-
-    public String getPadding() { return getPropertyAsString(PADDING); }
-    public void setPadding(String padding) { setProperty(PADDING, padding); }
 }

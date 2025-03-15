@@ -1,10 +1,14 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
+import org.jpos.tlv.ISOTaggedField;
 import org.junit.Before;
 import org.junit.Test;
+import static org.jpos.emv.EMVStandardTagType.APPLICATION_CRYPTOGRAM_0x9F26;
 import static org.jpos.emv.EMVStandardTagType.ISSUER_APPLICATION_DATA_0x9F10;
 import static org.junit.Assert.*;
 
@@ -120,7 +124,7 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
     }
 
     @Test
-    public void shouldCalculateARQC() {
+    public void shouldCalculateARQC() throws ISOException {
         sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setIccField("55");
@@ -129,23 +133,23 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         ISOMsg msg = sampler.getRequest();
         assertTrue(msg.hasField("55.12"));
         assertTrue(msg.getString("55.12").matches("[0-9A-F]{16}"));
+        assertEquals(APPLICATION_CRYPTOGRAM_0x9F26.getTagNumberHex(), ((ISOTaggedField)msg.getComponent("55.12")).getTag());
     }
 
     @Test
     public void shouldOverrideARQCInputTags() {
-        sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setIccField("55");
 
+        sampler.setFields(iccData);
         instance.setTxnData(""); // automatic extraction
         instance.process();
-
         ISOMsg msg = sampler.getRequest();
         assertTrue(msg.hasField("55.12"));
         String arqc = msg.getString("55.12");
 
-        sampler.setFields(iccData);
-        instance.setTxnData(iccData.stream().map(MessageField::getContent).collect(Collectors.joining())); // should result in the same arqc
+        sampler.removeField("55.12"); // remove cryptogram field
+        instance.setTxnData(iccData.stream().map(MessageField::getContent).collect(Collectors.joining())+"80"); // hex data input
         instance.process();
         msg = sampler.getRequest();
         assertTrue(msg.hasField("55.12"));
@@ -157,17 +161,25 @@ public class ISO8583CryptoTest extends ISO8583TestBase {
         sampler.setFields(iccData);
         instance.setImkac(DEFAULT_3DES_KEY);
         instance.setIccField("55");
-        for (String iad : new String[]{
-                "06010A03000000", // Visa CVN10
-                "06011203000000", // Visa CVN18
-                "0210A00000000000000000000000000000FF", // MCHIP CVN10
-                "0114020000044000DAC10000000000000000", // MCHIP CVN14
-        }) {
-            sampler.setFields(iccData.stream().filter(f -> !ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex().equals(f.getTag())).collect(Collectors.toList()));
-            sampler.addField("55.11", iad, ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex());
+        instance.setPan("4111111111111111");
+        instance.setPsn("01");
+
+        Arrays.asList(
+            new String[]{ "06010A03000000", "84D785136EFA29D1" }, // Visa CVN10
+            new String[]{ "06011203000000", "4576E1E877E459EC" }, // Visa CVN18
+            new String[]{ "0210A00000000000000000000000000000FF", "AC7FFD216E326F06" }, // MCHIP CVN16
+            new String[]{ "0114020000044000DAC10000000000000000", "AB2400DF6F95530B" } // MCHIP CVN22
+        ).forEach(pair -> {
+            String iad = pair[0], arqc = pair[1];
+            sampler.setFields(iccData.stream()
+                    .map(f -> ISSUER_APPLICATION_DATA_0x9F10.getTagNumberHex().equals(f.getTag()) ?
+                            new MessageField(f.getName(), iad, f.getTag()) : f)
+                    .collect(Collectors.toList())
+            );
             instance.process();
             assertTrue(sampler.getRequest().hasField("55.12"));
-        }
+            assertEquals(arqc, sampler.getRequest().getString("55.12"));
+        });
     }
 
     @Test

@@ -14,10 +14,10 @@ based on the excellent [jPOS framework](http://jpos.org/). Includes the followin
 
 #### Prerequisites
 A so-called Packager is required to transform ("pack") the message into its binary representation for sending it over the wire.
-This plugin uses a jPOS [Generic Packager](https://github.com/jpos/jPOS/blob/v2_1_8/doc/src/asciidoc/ch04/genericpackager.adoc)
+This plugin uses a jPOS [Generic Packager](https://github.com/jpos/jPOS/blob/v2_1_10/doc/src/asciidoc/ch04/genericpackager.adoc)
 that needs to be configured with an XML file.
 
-Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/v2_1_8/jpos/src/dist/cfg/packager)
+Often one of the jPOS [packager configuration files](https://github.com/jpos/jPOS/tree/v2_1_10/jpos/src/dist/cfg/packager)
 may be used as-is or with few customisations.
 
 #### Sample Message
@@ -66,8 +66,8 @@ A static header string for all messages (sent and received).
 Note that some Channels use dynamic headers instead (e.g. VAPChannel).
 - *Advanced Configuration*: 
 Channel-dependent properties can be specified via *Name*/*Value* pairs.
-For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
-for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
+For example, [`srcid` and `dstid`](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/channel/VAPChannel.java#L236-L237)
+for VAPChannel's [Base1Header](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/header/BASE1Header.java).
 - *SSL Settings*: 
 For SSL/TLS connections, the *Keystore File* 
 (protected with *Keystore Password* for the file and *Key Password* for a private key) should contain:
@@ -76,7 +76,7 @@ For SSL/TLS connections, the *Keystore File*
     * Server mode: the server certificate (with public and private key).
 - *Mux Settings* (since v1.1):
     Control how the Mux finds matches between outgoing requests and incoming response messages. 
-    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_8/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
+    See [QMUX documentation](https://github.com/jpos/jPOS/blob/v2_1_10/doc/src/asciidoc/ch08/qmux.adoc#mti-mapping-and-default-key)
     for further details.
     * *MTI Mapping*: 3 ten-digit numbers representing how the first 3 MTI digits are mapped between request and response.
     Example (default): "0123456789 0123456789 0022446789" maps response MTI `0110` to request MTI `0100`.
@@ -130,8 +130,8 @@ For SSL/TLS connections, the *Keystore File*
 
 ##### Implementation Details
 
-This component encapsulates a jPOS [Q2 container](https://github.com/jpos/jPOS/blob/v2_1_8/doc/src/asciidoc/master.adoc#q2)
-and [QBeans services](https://github.com/jpos/jPOS/blob/v2_1_8/doc/src/asciidoc/master.adoc#8-q2-jpos-services).
+This component encapsulates a jPOS [Q2 container](https://github.com/jpos/jPOS/blob/v2_1_10/doc/src/asciidoc/master.adoc#q2)
+and [QBeans services](https://github.com/jpos/jPOS/blob/v2_1_10/doc/src/asciidoc/master.adoc#8-q2-jpos-services).
 It manages either set of 3 components (depending on client or server mode):
 - ChannelAdaptor, Channel and QMUX
 - QServer, Channel and QMUX
@@ -342,15 +342,18 @@ and the calculated ARQC value will be added as an additional subfield (tag `9F26
 
     **Note:** Changed behaviour! For v1.0 the data in this field is *appended* to the automatically extracted fields,
     whereas as of v1.1 data in this field overrides the extraction.
-- *Padding (hex)* (since v1.1): Optional, additional padding bytes to append to transaction data before ARQC calculation 
-(leave blank for zero-padding, 80 for ISO9797-1 Method 2).
 
-**Note:** Changed behaviour! Until v1.2 the input field
+**Note: Changed behaviour!**
+- Until v1.2 the input field
   *Session Key Derivation Method* (how to derive the UDK from the Master Key) had to be set explicitly.
   As of v1.3 this is obsolete as it will be determined automatically by evaluating the Issuer Application Data field (tag `9F10`). 
 
-  Likewise, as of v1.3, the JMeter properties `jmeter.iso8583.arqcInputTags` and `jmeter.iso8583.arqcFromFullIADForCVNs` have been 
+- Likewise, as of v1.3, the JMeter properties `jmeter.iso8583.arqcInputTags` and `jmeter.iso8583.arqcFromFullIADForCVNs` have been 
   removed as jPOS [handles](https://github.com/jpos/jPOS/pull/499) this cryptogram logic internally.
+
+- From v1.1 - v1.3 the field *Padding (hex)* would specify optional, additional padding bytes to append to transaction data 
+  before ARQC calculation. As of v1.4 the padding will be [handled](https://github.com/jpos/jPOS/pull/577) automatically,
+  depending on the Issuer Application Data.
 
 <h3 id="functions">Crypto Functions (since v1.1)</h3>
 
@@ -428,13 +431,13 @@ Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso858
 
 1. Copy the [jmeter-iso8583 jar file](https://github.com/tilln/jmeter-iso8583/releases/download/1.3/jmeter-iso8583-1.3.jar) into JMeter's `lib/ext` directory.
 2. Copy the following dependencies into JMeter's `lib` directory (and optionally remove older versions of any of those jar files):
-    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.8/jpos-2.1.8.jar)
-    * [org.bouncycastle / bcprov-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.69/bcprov-jdk15on-1.69.jar)
-    * [org.bouncycastle / bcpg-jdk15on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-jdk15on/1.69/bcpg-jdk15on-1.69.jar)
+    * [org.jpos / jpos](https://search.maven.org/remotecontent?filepath=org/jpos/jpos/2.1.10/jpos-2.1.10.jar)
+    * [org.bouncycastle / bcprov-lts8on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-lts8on/2.73.6/bcprov-lts8on-2.73.6.jar)
+    * [org.bouncycastle / bcpg-lts8on](https://search.maven.org/remotecontent?filepath=org/bouncycastle/bcpg-lts8on/2.73.6/bcpg-lts8on-2.73.6.jar)
     * [org.jdom / jdom2](https://search.maven.org/remotecontent?filepath=org/jdom/jdom2/2.0.6.1/jdom2-2.0.6.1.jar)
     * [org.osgi / org.osgi.core](https://search.maven.org/remotecontent?filepath=org/osgi/org.osgi.core/6.0.0/org.osgi.core-6.0.0.jar)
     * [commons-cli / commons-cli](https://search.maven.org/remotecontent?filepath=commons-cli/commons-cli/1.4/commons-cli-1.4.jar)
-    * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/1.33/snakeyaml-1.33.jar)
+    * [org.yaml / snakeyaml](https://search.maven.org/remotecontent?filepath=org/yaml/snakeyaml/2.0/snakeyaml-2.0.jar)
     * [org.hdrhistogram / HdrHistogram](https://search.maven.org/remotecontent?filepath=org/hdrhistogram/HdrHistogram/2.1.12/HdrHistogram-2.1.12.jar)
     * [org.javatuples / javatuples](https://search.maven.org/remotecontent?filepath=org/javatuples/javatuples/1.2/javatuples-1.2.jar)
 3. Restart JMeter.
@@ -539,7 +542,7 @@ Every message field needs an appropriate jPOS Field Packager
 (a Java class that translates between the logical and binary value of the message field). 
 Unfortunately, not all classes are well documented, however, their class names follow a quite consistent naming scheme.
 
-Sometimes, an [existing configuration](https://github.com/jpos/jPOS/tree/v2_1_8/jpos/src/dist/cfg/packager)
+Sometimes, an [existing configuration](https://github.com/jpos/jPOS/tree/v2_1_10/jpos/src/dist/cfg/packager)
 can be a starting point or even be sufficient for performance testing purposes
 (as not all fields need to be correctly defined but only the ones used in the JMeter test). 
 
@@ -548,7 +551,7 @@ otherwise message traces may have to be inspected and interpreted.
 
 For example, suppose the trace for an 0800 Network Management message starts with the bytes `30 38 30 30` (hexadecimal),
 which are the MTI's ASCII representation, then the Field Packager class should be 
-[`org.jpos.iso.IFA_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/iso/IFA_NUMERIC.java).
+[`org.jpos.iso.IFA_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/IFA_NUMERIC.java).
 Otherwise, if the trace starts with `08 00` (hex),
 i.e. the MTI in [BCD](https://en.wikipedia.org/wiki/Binary-coded_decimal), the class should be
-[`org.jpos.iso.IFB_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_8/jpos/src/main/java/org/jpos/iso/IFB_NUMERIC.java).
+[`org.jpos.iso.IFB_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/IFB_NUMERIC.java).

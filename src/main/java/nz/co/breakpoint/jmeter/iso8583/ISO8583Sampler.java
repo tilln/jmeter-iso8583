@@ -12,7 +12,6 @@ import org.apache.jmeter.testbeans.TestBeanHelper;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.*;
 import org.jpos.iso.*;
-import org.jpos.q2.iso.QMUX;
 import org.jpos.util.NameRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +157,9 @@ public class ISO8583Sampler extends AbstractSampler
             result.setSentBytes((long) bytes.length +
                     (header != null ? header.length : 0) + (trailer != null ? trailer.length : 0));
         } catch (ISOException e) {
-            log.error("Packager error on request '{}'. Check config! {}", getName(), e.toString());
+            log.error("Packager error on request '{}'. Check config! {}", getName(), e);
+        } catch (Exception e) {
+            log.error("'{}' request exception: {}", getName(), e);
         }
 
         // Send the request...
@@ -167,7 +168,7 @@ public class ISO8583Sampler extends AbstractSampler
         try {
             response = sendRequest(request);
         } catch (ISOException | NameRegistrar.NotFoundException e) {
-            log.error((e instanceof ISOException) ? "Send failed {}" : "Incorrect configuration {}", e.toString(), e);
+            log.error((e instanceof ISOException) ? "Send failed" : "Incorrect configuration", e);
             result.setResponseMessage(e.toString());
             return result;
         } finally {
@@ -197,7 +198,7 @@ public class ISO8583Sampler extends AbstractSampler
             if (success != null && !success.isEmpty()) {
                 if (Arrays.stream(success.split(DELIMITER_REGEX)).noneMatch(s -> s.equals(rc))) {
                     result.setSuccessful(false);
-                    result.setResponseMessage("Unexpected response code");
+                    result.setResponseMessage("Unexpected response code "+rc);
                 }
             }
         }
@@ -210,7 +211,9 @@ public class ISO8583Sampler extends AbstractSampler
             result.setHeadersSize((header != null ? header.length : 0) + (trailer != null ? trailer.length : 0));
             result.setBodySize((long) bytes.length);
         } catch (ISOException e) {
-            log.error("Packager error on response '{}'. Check config! {}", getName(), e.toString());
+            log.error("Packager error on response '{}'. Check config! {}", getName(), e);
+        } catch (Exception e) {
+            log.error("'{}' response exception {}", getName(), e);
         }
         return result;
     }
@@ -224,7 +227,7 @@ public class ISO8583Sampler extends AbstractSampler
         try {
             builder.define(getFields());
         } catch (ISOException e) {
-            log.error("Fields incorrect - {}", e.toString());
+            log.error("Fields incorrect", e);
         }
         return builder.header(getHeader()).trailer(getTrailer()).getMessage();
     }

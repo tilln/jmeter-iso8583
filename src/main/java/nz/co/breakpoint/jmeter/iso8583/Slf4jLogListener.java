@@ -41,7 +41,7 @@ public class Slf4jLogListener implements LogListener {
         for (Object o : evt.getPayLoad()) {
             final String line = o.toString();
             if (o instanceof Throwable)
-                log.error(format.toString(), ((Throwable) o).getMessage(), (Throwable) o);
+                log.error(format.toString(), ((Throwable) o).getMessage(), o);
             else
                 log(log, level, format.toString(), line);
         }

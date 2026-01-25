@@ -1,11 +1,7 @@
 package nz.co.breakpoint.jmeter.iso8583;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import javax.management.*;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.util.NoThreadClone;
@@ -87,7 +83,7 @@ public class ISO8583Config extends ConfigTestElement
 
     public enum ConnectionSelection {
         LAST, // Last connected https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L350
-        RR, // Round robin https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L385
+        RR, // Round-robin https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L385
         ALL; // All connected https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/q2/iso/QServer.java#L365
 
         // Tags must match ResourceBundle and appear in script files:
@@ -100,7 +96,7 @@ public class ISO8583Config extends ConfigTestElement
         }
 
         public String toTag() {
-            return CONNECTIONSELECTION + "." + toString();
+            return CONNECTIONSELECTION + "." + this;
         }
     }
 
@@ -110,7 +106,7 @@ public class ISO8583Config extends ConfigTestElement
     static String getDefaultChannelClass() { return getChannelClasses()[0]; }
     static String[] getChannelClasses() { return channelClasses.keySet().toArray(new String[]{}); }
 
-    protected static transient Q2 q2;
+    protected static Q2 q2;
     // Internal property name for distinct QBean names if there are more than one ISO8583Config instance:
     protected static final String CONFIGKEY = "configKey";
     protected static final String Q2_LOGGER = "Q2";

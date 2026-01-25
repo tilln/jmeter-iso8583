@@ -102,6 +102,6 @@ public class ISO8583SamplerIntegrationTest extends ISO8583TestBase {
             t.start();
             t.join();
         }
-        assertEquals("Expected no ConcurrentModificationException", false, exceptionThrown.get());
+        assertFalse("Expected no ConcurrentModificationException", exceptionThrown.get());
     }
 }

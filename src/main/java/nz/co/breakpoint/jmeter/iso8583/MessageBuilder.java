@@ -25,6 +25,7 @@ public class MessageBuilder {
         msg.setPackager(packager);
         msg.setHeader(header);
         msg.setTrailer(trailer);
+        msg.setDirection(ISOMsg.OUTGOING);
     }
 
     public ISOMsg getMessage() {

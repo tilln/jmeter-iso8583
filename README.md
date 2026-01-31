@@ -287,7 +287,7 @@ with the sampler's fields themselves being the innermost ones.
 
 ![ISO8583 Crypto](docs/crypto.png)
 
-This (optional) Preprocessor modifies a message, based on cryptographic calculations, 
+This (optional) Pre-Processor modifies a message, based on cryptographic calculations, 
 before it is packaged and sent by the sampler.
 
 This is necessary for some fields that can only be determined during runtime of the JMeter test,
@@ -423,6 +423,8 @@ Installation
 
 Under tab "Available Plugins", select "ISO8583 Sampler", then click "Apply Changes and Restart JMeter".
 
+Alternatively run [command line](https://jmeter-plugins.org/wiki/PluginsManagerAutomated/) `PluginsManagerCMD install tilln-iso8583`.
+
 ### Via Package from [JMeter-Plugins.org](https://jmeter-plugins.org/)
 
 Extract the [zip package](https://jmeter-plugins.org/files/packages/tilln-iso8583-1.4.zip) into JMeter's root directory, then restart JMeter.
@@ -527,7 +529,6 @@ Double-check the *Packager Configuration* file!
 2022-02-22 12:34:56,987 ERROR n.c.b.j.i.Q2: (channel/HOSTNAME:PORT) [receive] org.jpos.iso.SOMECLASSNAMEHERE: Problem unpacking field ...
 ```
 
-
 If the second log line contains no error then it is likely that the plugin did not find a matching request (case 3 above).
 Double-check the *Mux Settings*!
 These define MTI values and message fields that are used for matching, and the default settings may not work. 
@@ -555,3 +556,69 @@ which are the MTI's ASCII representation, then the Field Packager class should b
 Otherwise, if the trace starts with `08 00` (hex),
 i.e. the MTI in [BCD](https://en.wikipedia.org/wiki/Binary-coded_decimal), the class should be
 [`org.jpos.iso.IFB_NUMERIC`](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/IFB_NUMERIC.java).
+
+### How can I inspect all the data that is sent/received, including header etc.?
+
+1. JMeter "View Results Tree":
+    
+    The [`SampleResult`](https://jmeter.apache.org/api/org/apache/jmeter/samplers/SampleResult.html)
+    includes String representations of request and response data, which are just "[dumps](https://github.com/jpos/jPOS/blob/v2_1_10/jpos/src/main/java/org/jpos/iso/ISOMsg.java#L500)"
+    of the ISOMsg in some mark-up format ("almost" XML).
+    
+    Limitations: 
+    - Headers and total message length that are added by the Channel are not known yet when the *ISO8583 Sampler* generates
+      the SampleResult, so they cannot be displayed here. Only headers defined in the sampler will be shown.
+
+2. JMeter logs:
+
+    Debug logging (see [above](README.md#Troubleshooting)) will include the binary representation of the request/response,
+    though with the same limitations as above.
+
+    The log will show received response headers if there are processing errors such as Packager exceptions. 
+
+3. Wireshark, tcpdump, netcat or similar:
+
+    A network sniffer tool may have to be used to troubleshoot issues with message length, headers etc.
+
+### How can I manipulate a request/response before/after sending?
+
+JSR223 [Pre-Processors](https://jmeter.apache.org/usermanual/component_reference.html#JSR223_PreProcessor),
+[Post-Processors](https://jmeter.apache.org/usermanual/component_reference.html#JSR223_PostProcessor),
+[Assertions](https://jmeter.apache.org/usermanual/component_reference.html#JSR223_Assertion),
+[Timers](https://jmeter.apache.org/usermanual/component_reference.html#JSR223_Timer)
+can access the *ISO8583 Sampler* instance `sampler`, and this exposes methods to manipulate the request and/or response message.
+
+```java
+   void addField(String id, String value)
+   void addField(String id, String value, String tag)
+   void removeField(String id)
+   Collection<MessageField> getFields()
+   void setFields(Collection<MessageField> fields)
+   ISOMsg getRequest()
+   ISOMsg getResponse()
+```
+
+`sampler.getRequest()` will create and return the same [`ISOMsg`](https://jpos.org/doc/javadoc/org/jpos/iso/ISOMsg.html)
+object as the sampler will send.
+This will include fields added by earlier Pre-Processors, including an *ISO8583 Crypto PreProcessor*.
+Caveat: Fields will be evaluated with every access. When using functions that e.g. generate random values
+those will be different when the message is built before sending.
+
+The XML representations you would see in a "View Results Tree" can be accessed via `prev.getSamplerData()`
+for the request and `prev.getResponseDataAsString()` for the response. However, those cannot be modified.
+
+Note: In Groovy scripts a cast `((ISO8583Sampler)sampler)` is not required.
+
+Examples:
+
+1. Modifying the request message fields
+
+    `sampler.addField("11", String.format("%06d", java.util.concurrent.ThreadLocalRandom.current().nextLong(1000000)))`
+
+2. Accessing the request message object
+
+    `log.info(org.jpos.iso.ISOUtil.byte2hex(sampler.getRequest().pack()))`
+
+3. Extracting fields from the response message
+
+    `vars.put("AuthID", sampler.getResponse()?.getString(38))`

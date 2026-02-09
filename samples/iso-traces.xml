@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testResults version="1.2">
+<sample t="22" it="0" lt="0" ct="0" ts="1770595666569" s="true" lb="ISO8583 Sampler" rc="00" rm="OK" tn="Thread Group 1-1" dt="text" de="windows-1252" by="231" sby="230" sc="1" ec="0" ng="1" na="1" hn="TillN-ZenBook">
+  <assertionResult>
+    <name>Response Assertion</name>
+    <failure>false</failure>
+    <error>false</error>
+  </assertionResult>
+  <responseHeader class="java.lang.String"></responseHeader>
+  <requestHeader class="java.lang.String">Host: localhost
+Port: 9999</requestHeader>
+  <responseData class="java.lang.String">&lt;isomsg direction=&quot;incoming&quot;&gt;&#xd;
+  &lt;!-- org.jpos.iso.packager.GenericPackager[demo-packager.xml] --&gt;&#xd;
+  &lt;header&gt;44656D6F4A4D65746572&lt;/header&gt;&#xd;
+  &lt;field id=&quot;0&quot; value=&quot;0110&quot;/&gt;&#xd;
+  &lt;field id=&quot;7&quot; value=&quot;0209130746&quot;/&gt;&#xd;
+  &lt;field id=&quot;11&quot; value=&quot;000001&quot;/&gt;&#xd;
+  &lt;field id=&quot;12&quot; value=&quot;130746&quot;/&gt;&#xd;
+  &lt;field id=&quot;13&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;15&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;16&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;17&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;39&quot; value=&quot;00&quot;/&gt;&#xd;
+  &lt;field id=&quot;41&quot; value=&quot;72810727&quot;/&gt;&#xd;
+  &lt;isomsg id=&quot;43&quot;&gt;&#xd;
+    &lt;!-- org.jpos.iso.packager.GenericSubFieldPackager --&gt;&#xd;
+    &lt;field id=&quot;1&quot; value=&quot;NAME                     &quot;/&gt;&#xd;
+    &lt;field id=&quot;2&quot; value=&quot;CITY         &quot;/&gt;&#xd;
+    &lt;field id=&quot;3&quot; value=&quot;NZ&quot;/&gt;&#xd;
+  &lt;/isomsg&gt;&#xd;
+  &lt;isomsg id=&quot;55&quot;&gt;&#xd;
+    &lt;!-- org.jpos.tlv.packager.bertlv.BERTLVBinaryPackager --&gt;&#xd;
+    &lt;9F02&gt;&lt;field id=&quot;1&quot; value=&quot;1000&quot;/&gt;&lt;/9F02&gt;
+    &lt;9F03&gt;&lt;field id=&quot;2&quot; value=&quot;0&quot;/&gt;&lt;/9F03&gt;
+    &lt;9F1A&gt;&lt;field id=&quot;3&quot; value=&quot;554&quot;/&gt;&lt;/9F1A&gt;
+    &lt;95&gt;&lt;field id=&quot;4&quot; value=&quot;0000000000&quot; type=&quot;binary&quot;/&gt;&lt;/95&gt;
+    &lt;5F2A&gt;&lt;field id=&quot;5&quot; value=&quot;554&quot;/&gt;&lt;/5F2A&gt;
+    &lt;9A&gt;&lt;field id=&quot;6&quot; value=&quot;260209&quot;/&gt;&lt;/9A&gt;
+    &lt;9C&gt;&lt;field id=&quot;7&quot; value=&quot;1&quot;/&gt;&lt;/9C&gt;
+    &lt;9F37&gt;&lt;field id=&quot;8&quot; value=&quot;19F95B87&quot; type=&quot;binary&quot;/&gt;&lt;/9F37&gt;
+    &lt;82&gt;&lt;field id=&quot;9&quot; value=&quot;5C00&quot; type=&quot;binary&quot;/&gt;&lt;/82&gt;
+    &lt;9F36&gt;&lt;field id=&quot;10&quot; value=&quot;0002&quot; type=&quot;binary&quot;/&gt;&lt;/9F36&gt;
+    &lt;9F10&gt;&lt;field id=&quot;11&quot; value=&quot;06011203000000&quot; type=&quot;binary&quot;/&gt;&lt;/9F10&gt;
+    &lt;5A&gt;&lt;field id=&quot;12&quot; value=&quot;4111111111111111&quot;/&gt;&lt;/5A&gt;
+    &lt;5F34&gt;&lt;field id=&quot;13&quot; value=&quot;1&quot;/&gt;&lt;/5F34&gt;
+    &lt;9F26&gt;&lt;field id=&quot;14&quot; value=&quot;ABF56CD3FE014691&quot; type=&quot;binary&quot;/&gt;&lt;/9F26&gt;
+  &lt;/isomsg&gt;&#xd;
+  &lt;field id=&quot;64&quot; value=&quot;80FB32F3FFFFFFFF&quot; type=&quot;binary&quot;/&gt;&#xd;
+&lt;/isomsg&gt;&#xd;
+
+&lt;!--
+0000  30 31 31 30 30 32 33 42  38 30 30 30 30 32 41 30  0110023B800002A0&#xd;
+0010  30 32 30 31 30 32 30 39  31 33 30 37 34 36 30 30  0201020913074600&#xd;
+0020  30 30 30 31 31 33 30 37  34 36 30 32 30 39 30 32  0001130746020902&#xd;
+0030  30 39 30 32 30 39 30 32  30 39 30 30 37 32 38 31  0902090209007281&#xd;
+0040  30 37 32 37 4E 41 4D 45  20 20 20 20 20 20 20 20  0727NAME        &#xd;
+0050  20 20 20 20 20 20 20 20  20 20 20 20 20 43 49 54               CIT&#xd;
+0060  59 20 20 20 20 20 20 20  20 20 4E 5A 30 39 34 9F  Y         NZ094.&#xd;
+0070  02 06 00 00 00 00 10 00  9F 03 06 00 00 00 00 00  ................&#xd;
+0080  00 9F 1A 02 05 54 95 05  00 00 00 00 00 5F 2A 02  .....T......._*.&#xd;
+0090  05 54 9A 03 26 02 09 9C  01 01 9F 37 04 19 F9 5B  .T..&amp;......7...[&#xd;
+00a0  87 82 02 5C 00 9F 36 02  00 02 9F 10 07 06 01 12  ...\..6.........&#xd;
+00b0  03 00 00 00 5A 08 41 11  11 11 11 11 11 11 5F 34  ....Z.A......._4&#xd;
+00c0  01 01 9F 26 08 AB F5 6C  D3 FE 01 46 91 38 30 46  ...&amp;...l...F.80F&#xd;
+00d0  42 33 32 46 33 46 46 46  46 46 46 46 46           B32F3FFFFFFFF&#xd;
+--&gt;</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <samplerData class="java.lang.String">&lt;isomsg&gt;&#xd;
+  &lt;!-- org.jpos.iso.packager.GenericPackager[demo-packager.xml] --&gt;&#xd;
+  &lt;header&gt;44656D6F4A4D65746572&lt;/header&gt;&#xd;
+  &lt;field id=&quot;0&quot; value=&quot;0100&quot;/&gt;&#xd;
+  &lt;field id=&quot;7&quot; value=&quot;0209130746&quot;/&gt;&#xd;
+  &lt;field id=&quot;11&quot; value=&quot;000001&quot;/&gt;&#xd;
+  &lt;field id=&quot;12&quot; value=&quot;130746&quot;/&gt;&#xd;
+  &lt;field id=&quot;13&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;15&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;16&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;17&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;41&quot; value=&quot;72810727&quot;/&gt;&#xd;
+  &lt;isomsg id=&quot;43&quot;&gt;&#xd;
+    &lt;field id=&quot;1&quot; value=&quot;NAME&quot;/&gt;&#xd;
+    &lt;field id=&quot;2&quot; value=&quot;CITY&quot;/&gt;&#xd;
+    &lt;field id=&quot;3&quot; value=&quot;NZ&quot;/&gt;&#xd;
+  &lt;/isomsg&gt;&#xd;
+  &lt;isomsg id=&quot;55&quot;&gt;&#xd;
+    &lt;9F02&gt;&lt;field id=&quot;1&quot; value=&quot;000000001000&quot;/&gt;&lt;/9F02&gt;
+    &lt;9F03&gt;&lt;field id=&quot;2&quot; value=&quot;000000000000&quot;/&gt;&lt;/9F03&gt;
+    &lt;9F1A&gt;&lt;field id=&quot;3&quot; value=&quot;0554&quot;/&gt;&lt;/9F1A&gt;
+    &lt;95&gt;&lt;field id=&quot;4&quot; value=&quot;0000000000&quot; type=&quot;binary&quot;/&gt;&lt;/95&gt;
+    &lt;5F2A&gt;&lt;field id=&quot;5&quot; value=&quot;0554 &quot;/&gt;&lt;/5F2A&gt;
+    &lt;9A&gt;&lt;field id=&quot;6&quot; value=&quot;260209&quot;/&gt;&lt;/9A&gt;
+    &lt;9C&gt;&lt;field id=&quot;7&quot; value=&quot;01&quot;/&gt;&lt;/9C&gt;
+    &lt;9F37&gt;&lt;field id=&quot;8&quot; value=&quot;19F95B87&quot; type=&quot;binary&quot;/&gt;&lt;/9F37&gt;
+    &lt;82&gt;&lt;field id=&quot;9&quot; value=&quot;5C00&quot; type=&quot;binary&quot;/&gt;&lt;/82&gt;
+    &lt;9F36&gt;&lt;field id=&quot;10&quot; value=&quot;0002&quot; type=&quot;binary&quot;/&gt;&lt;/9F36&gt;
+    &lt;9F10&gt;&lt;field id=&quot;11&quot; value=&quot;06011203000000&quot; type=&quot;binary&quot;/&gt;&lt;/9F10&gt;
+    &lt;5A&gt;&lt;field id=&quot;16&quot; value=&quot;4111111111111111&quot;/&gt;&lt;/5A&gt;
+    &lt;5F34&gt;&lt;field id=&quot;17&quot; value=&quot;01&quot;/&gt;&lt;/5F34&gt;
+    &lt;9F26&gt;&lt;field id=&quot;18&quot; value=&quot;ABF56CD3FE014691&quot; type=&quot;binary&quot;/&gt;&lt;/9F26&gt;
+  &lt;/isomsg&gt;&#xd;
+  &lt;field id=&quot;64&quot; value=&quot;80FB32F3FFFFFFFF&quot; type=&quot;binary&quot;/&gt;&#xd;
+&lt;/isomsg&gt;&#xd;
+
+&lt;!--
+0000  30 31 30 30 30 32 33 42  38 30 30 30 30 30 41 30  0100023B800000A0&#xd;
+0010  30 32 30 31 30 32 30 39  31 33 30 37 34 36 30 30  0201020913074600&#xd;
+0020  30 30 30 31 31 33 30 37  34 36 30 32 30 39 30 32  0001130746020902&#xd;
+0030  30 39 30 32 30 39 30 32  30 39 37 32 38 31 30 37  0902090209728107&#xd;
+0040  32 37 4E 41 4D 45 20 20  20 20 20 20 20 20 20 20  27NAME          &#xd;
+0050  20 20 20 20 20 20 20 20  20 20 20 43 49 54 59 20             CITY &#xd;
+0060  20 20 20 20 20 20 20 20  4E 5A 30 39 35 9F 02 06          NZ095...&#xd;
+0070  00 00 00 00 10 00 9F 03  06 00 00 00 00 00 00 9F  ................&#xd;
+0080  1A 02 05 54 95 05 00 00  00 00 00 5F 2A 03 00 05  ...T......._*...&#xd;
+0090  54 9A 03 26 02 09 9C 01  01 9F 37 04 19 F9 5B 87  T..&amp;......7...[.&#xd;
+00a0  82 02 5C 00 9F 36 02 00  02 9F 10 07 06 01 12 03  ..\..6..........&#xd;
+00b0  00 00 00 5A 08 41 11 11  11 11 11 11 11 5F 34 01  ...Z.A......._4.&#xd;
+00c0  01 9F 26 08 AB F5 6C D3  FE 01 46 91 38 30 46 42  ..&amp;...l...F.80FB&#xd;
+00d0  33 32 46 33 46 46 46 46  46 46 46 46              32F3FFFFFFFF&#xd;
+--&gt;</samplerData>
+</sample>
+
+<sample t="6" it="0" lt="0" ct="0" ts="1770595691479" s="true" lb="ISO8583 Sampler" rc="00" rm="OK" tn="Thread Group 1-1" dt="text" de="windows-1252" by="231" sby="230" sc="1" ec="0" ng="1" na="1" hn="TillN-ZenBook">
+  <assertionResult>
+    <name>Response Assertion</name>
+    <failure>false</failure>
+    <error>false</error>
+  </assertionResult>
+  <responseHeader class="java.lang.String"></responseHeader>
+  <requestHeader class="java.lang.String">Host: localhost
+Port: 9999</requestHeader>
+  <responseData class="java.lang.String">&lt;isomsg direction=&quot;incoming&quot;&gt;&#xd;
+  &lt;!-- org.jpos.iso.packager.GenericPackager[demo-packager.xml] --&gt;&#xd;
+  &lt;header&gt;44656D6F4A4D65746572&lt;/header&gt;&#xd;
+  &lt;field id=&quot;0&quot; value=&quot;0110&quot;/&gt;&#xd;
+  &lt;field id=&quot;7&quot; value=&quot;0209130811&quot;/&gt;&#xd;
+  &lt;field id=&quot;11&quot; value=&quot;000001&quot;/&gt;&#xd;
+  &lt;field id=&quot;12&quot; value=&quot;130811&quot;/&gt;&#xd;
+  &lt;field id=&quot;13&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;15&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;16&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;17&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;39&quot; value=&quot;00&quot;/&gt;&#xd;
+  &lt;field id=&quot;41&quot; value=&quot;52364725&quot;/&gt;&#xd;
+  &lt;isomsg id=&quot;43&quot;&gt;&#xd;
+    &lt;!-- org.jpos.iso.packager.GenericSubFieldPackager --&gt;&#xd;
+    &lt;field id=&quot;1&quot; value=&quot;NAME                     &quot;/&gt;&#xd;
+    &lt;field id=&quot;2&quot; value=&quot;CITY         &quot;/&gt;&#xd;
+    &lt;field id=&quot;3&quot; value=&quot;NZ&quot;/&gt;&#xd;
+  &lt;/isomsg&gt;&#xd;
+  &lt;isomsg id=&quot;55&quot;&gt;&#xd;
+    &lt;!-- org.jpos.tlv.packager.bertlv.BERTLVBinaryPackager --&gt;&#xd;
+    &lt;9F02&gt;&lt;field id=&quot;1&quot; value=&quot;1000&quot;/&gt;&lt;/9F02&gt;
+    &lt;9F03&gt;&lt;field id=&quot;2&quot; value=&quot;0&quot;/&gt;&lt;/9F03&gt;
+    &lt;9F1A&gt;&lt;field id=&quot;3&quot; value=&quot;554&quot;/&gt;&lt;/9F1A&gt;
+    &lt;95&gt;&lt;field id=&quot;4&quot; value=&quot;0000000000&quot; type=&quot;binary&quot;/&gt;&lt;/95&gt;
+    &lt;5F2A&gt;&lt;field id=&quot;5&quot; value=&quot;554&quot;/&gt;&lt;/5F2A&gt;
+    &lt;9A&gt;&lt;field id=&quot;6&quot; value=&quot;260209&quot;/&gt;&lt;/9A&gt;
+    &lt;9C&gt;&lt;field id=&quot;7&quot; value=&quot;1&quot;/&gt;&lt;/9C&gt;
+    &lt;9F37&gt;&lt;field id=&quot;8&quot; value=&quot;EC9F6B6A&quot; type=&quot;binary&quot;/&gt;&lt;/9F37&gt;
+    &lt;82&gt;&lt;field id=&quot;9&quot; value=&quot;5C00&quot; type=&quot;binary&quot;/&gt;&lt;/82&gt;
+    &lt;9F36&gt;&lt;field id=&quot;10&quot; value=&quot;0003&quot; type=&quot;binary&quot;/&gt;&lt;/9F36&gt;
+    &lt;9F10&gt;&lt;field id=&quot;11&quot; value=&quot;06011203000000&quot; type=&quot;binary&quot;/&gt;&lt;/9F10&gt;
+    &lt;5A&gt;&lt;field id=&quot;12&quot; value=&quot;4111111111111111&quot;/&gt;&lt;/5A&gt;
+    &lt;5F34&gt;&lt;field id=&quot;13&quot; value=&quot;1&quot;/&gt;&lt;/5F34&gt;
+    &lt;9F26&gt;&lt;field id=&quot;14&quot; value=&quot;1101468D46FBAF76&quot; type=&quot;binary&quot;/&gt;&lt;/9F26&gt;
+  &lt;/isomsg&gt;&#xd;
+  &lt;field id=&quot;64&quot; value=&quot;8BE6CB37FFFFFFFF&quot; type=&quot;binary&quot;/&gt;&#xd;
+&lt;/isomsg&gt;&#xd;
+
+&lt;!--
+0000  30 31 31 30 30 32 33 42  38 30 30 30 30 32 41 30  0110023B800002A0&#xd;
+0010  30 32 30 31 30 32 30 39  31 33 30 38 31 31 30 30  0201020913081100&#xd;
+0020  30 30 30 31 31 33 30 38  31 31 30 32 30 39 30 32  0001130811020902&#xd;
+0030  30 39 30 32 30 39 30 32  30 39 30 30 35 32 33 36  0902090209005236&#xd;
+0040  34 37 32 35 4E 41 4D 45  20 20 20 20 20 20 20 20  4725NAME        &#xd;
+0050  20 20 20 20 20 20 20 20  20 20 20 20 20 43 49 54               CIT&#xd;
+0060  59 20 20 20 20 20 20 20  20 20 4E 5A 30 39 34 9F  Y         NZ094.&#xd;
+0070  02 06 00 00 00 00 10 00  9F 03 06 00 00 00 00 00  ................&#xd;
+0080  00 9F 1A 02 05 54 95 05  00 00 00 00 00 5F 2A 02  .....T......._*.&#xd;
+0090  05 54 9A 03 26 02 09 9C  01 01 9F 37 04 EC 9F 6B  .T..&amp;......7...k&#xd;
+00a0  6A 82 02 5C 00 9F 36 02  00 03 9F 10 07 06 01 12  j..\..6.........&#xd;
+00b0  03 00 00 00 5A 08 41 11  11 11 11 11 11 11 5F 34  ....Z.A......._4&#xd;
+00c0  01 01 9F 26 08 11 01 46  8D 46 FB AF 76 38 42 45  ...&amp;...F.F..v8BE&#xd;
+00d0  36 43 42 33 37 46 46 46  46 46 46 46 46           6CB37FFFFFFFF&#xd;
+--&gt;</responseData>
+  <responseFile class="java.lang.String"></responseFile>
+  <samplerData class="java.lang.String">&lt;isomsg&gt;&#xd;
+  &lt;!-- org.jpos.iso.packager.GenericPackager[demo-packager.xml] --&gt;&#xd;
+  &lt;header&gt;44656D6F4A4D65746572&lt;/header&gt;&#xd;
+  &lt;field id=&quot;0&quot; value=&quot;0100&quot;/&gt;&#xd;
+  &lt;field id=&quot;7&quot; value=&quot;0209130811&quot;/&gt;&#xd;
+  &lt;field id=&quot;11&quot; value=&quot;000001&quot;/&gt;&#xd;
+  &lt;field id=&quot;12&quot; value=&quot;130811&quot;/&gt;&#xd;
+  &lt;field id=&quot;13&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;15&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;16&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;17&quot; value=&quot;0209&quot;/&gt;&#xd;
+  &lt;field id=&quot;41&quot; value=&quot;52364725&quot;/&gt;&#xd;
+  &lt;isomsg id=&quot;43&quot;&gt;&#xd;
+    &lt;field id=&quot;1&quot; value=&quot;NAME&quot;/&gt;&#xd;
+    &lt;field id=&quot;2&quot; value=&quot;CITY&quot;/&gt;&#xd;
+    &lt;field id=&quot;3&quot; value=&quot;NZ&quot;/&gt;&#xd;
+  &lt;/isomsg&gt;&#xd;
+  &lt;isomsg id=&quot;55&quot;&gt;&#xd;
+    &lt;9F02&gt;&lt;field id=&quot;1&quot; value=&quot;000000001000&quot;/&gt;&lt;/9F02&gt;
+    &lt;9F03&gt;&lt;field id=&quot;2&quot; value=&quot;000000000000&quot;/&gt;&lt;/9F03&gt;
+    &lt;9F1A&gt;&lt;field id=&quot;3&quot; value=&quot;0554&quot;/&gt;&lt;/9F1A&gt;
+    &lt;95&gt;&lt;field id=&quot;4&quot; value=&quot;0000000000&quot; type=&quot;binary&quot;/&gt;&lt;/95&gt;
+    &lt;5F2A&gt;&lt;field id=&quot;5&quot; value=&quot;0554 &quot;/&gt;&lt;/5F2A&gt;
+    &lt;9A&gt;&lt;field id=&quot;6&quot; value=&quot;260209&quot;/&gt;&lt;/9A&gt;
+    &lt;9C&gt;&lt;field id=&quot;7&quot; value=&quot;01&quot;/&gt;&lt;/9C&gt;
+    &lt;9F37&gt;&lt;field id=&quot;8&quot; value=&quot;EC9F6B6A&quot; type=&quot;binary&quot;/&gt;&lt;/9F37&gt;
+    &lt;82&gt;&lt;field id=&quot;9&quot; value=&quot;5C00&quot; type=&quot;binary&quot;/&gt;&lt;/82&gt;
+    &lt;9F36&gt;&lt;field id=&quot;10&quot; value=&quot;0003&quot; type=&quot;binary&quot;/&gt;&lt;/9F36&gt;
+    &lt;9F10&gt;&lt;field id=&quot;11&quot; value=&quot;06011203000000&quot; type=&quot;binary&quot;/&gt;&lt;/9F10&gt;
+    &lt;5A&gt;&lt;field id=&quot;16&quot; value=&quot;4111111111111111&quot;/&gt;&lt;/5A&gt;
+    &lt;5F34&gt;&lt;field id=&quot;17&quot; value=&quot;01&quot;/&gt;&lt;/5F34&gt;
+    &lt;9F26&gt;&lt;field id=&quot;18&quot; value=&quot;1101468D46FBAF76&quot; type=&quot;binary&quot;/&gt;&lt;/9F26&gt;
+  &lt;/isomsg&gt;&#xd;
+  &lt;field id=&quot;64&quot; value=&quot;8BE6CB37FFFFFFFF&quot; type=&quot;binary&quot;/&gt;&#xd;
+&lt;/isomsg&gt;&#xd;
+
+&lt;!--
+0000  30 31 30 30 30 32 33 42  38 30 30 30 30 30 41 30  0100023B800000A0&#xd;
+0010  30 32 30 31 30 32 30 39  31 33 30 38 31 31 30 30  0201020913081100&#xd;
+0020  30 30 30 31 31 33 30 38  31 31 30 32 30 39 30 32  0001130811020902&#xd;
+0030  30 39 30 32 30 39 30 32  30 39 35 32 33 36 34 37  0902090209523647&#xd;
+0040  32 35 4E 41 4D 45 20 20  20 20 20 20 20 20 20 20  25NAME          &#xd;
+0050  20 20 20 20 20 20 20 20  20 20 20 43 49 54 59 20             CITY &#xd;
+0060  20 20 20 20 20 20 20 20  4E 5A 30 39 35 9F 02 06          NZ095...&#xd;
+0070  00 00 00 00 10 00 9F 03  06 00 00 00 00 00 00 9F  ................&#xd;
+0080  1A 02 05 54 95 05 00 00  00 00 00 5F 2A 03 00 05  ...T......._*...&#xd;
+0090  54 9A 03 26 02 09 9C 01  01 9F 37 04 EC 9F 6B 6A  T..&amp;......7...kj&#xd;
+00a0  82 02 5C 00 9F 36 02 00  03 9F 10 07 06 01 12 03  ..\..6..........&#xd;
+00b0  00 00 00 5A 08 41 11 11  11 11 11 11 11 5F 34 01  ...Z.A......._4.&#xd;
+00c0  01 9F 26 08 11 01 46 8D  46 FB AF 76 38 42 45 36  ..&amp;...F.F..v8BE6&#xd;
+00d0  43 42 33 37 46 46 46 46  46 46 46 46              CB37FFFFFFFF&#xd;
+--&gt;</samplerData>
+</sample>
+
+</testResults>

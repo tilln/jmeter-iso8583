@@ -82,7 +82,7 @@
           <stringProp name="parameters"></stringProp>
           <stringProp name="script">SampleResult.setIgnore()
 
-if (!props.atcs) props.put(&quot;atcs&quot;, [:])
+if (!props.atcs) props.put(&quot;atcs&quot;, new java.util.concurrent.ConcurrentHashMap&lt;String,Integer&gt;())
 
 log.info &quot;ATCS: ${props.atcs}&quot;</stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
